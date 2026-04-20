@@ -902,9 +902,15 @@ const ADDONS = [
     price: 50
   },
   {
-    id: 'trim',
-    name: 'Trim Restoration (Exterior)',
-    desc: `Restores faded, chalky, or discolored exterior plastic and rubber trim back to a deep, rich black finish. Uses a professional-grade trim restorer that bonds to the surface and lasts far longer than standard dressings. Makes old trim look brand new and dramatically improves the overall appearance of your vehicle.`,
+    id: 'sap',
+    name: 'Tree Sap Removal',
+    desc: `Professional removal of hardened or embedded tree sap using a dedicated tar and sap remover followed by a clay bar treatment. Leaves paint smooth and contaminant-free. Prevents long-term etching and clear coat damage.`,
+    price: 35
+  },
+  {
+        id: 'trim',
+    name: 'Trim/Mat Restoration (Exterior)',
+    desc: `Restores faded, chalky, or discolored exterior plastic and rubber trim back to a deep, rich black finish. Uses a professional-grade trim restorer that bonds to the surface and lasts far longer than standard dressings. Makes old trim look brand new, and includes deep cleaning of floor mats.`,
     price: 35
   }
 ];
@@ -965,14 +971,13 @@ function renderAddons() {
   list.innerHTML = ADDONS.map(a => {
     const selected = booking.addons.find(x => x.id === a.id);
     return `
-    <div class="addon-card ${selected ? 'selected' : ''}" id="addon-${a.id}" onclick="toggleAddon('${a.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+    <div class="addon-card ${selected ? 'selected' : ''}" id="addon-${a.id}" >
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;" onclick="toggleAddon('${a.id}')">
         <div style="flex:1;">
-          <div style="font-weight:600;font-size:15px;margin-bottom:4px;">${a.name}</div>
-          <div style="font-size:12px;color:var(--muted);line-height:1.5;">${a.desc}</div>
+          <div style="font-weight:600;font-size:14px;">${a.name}</div><div style="font-size:11px;color:var(--muted);line-height:1.4;margin-top:2px;"><span id="ashort-${a.id}">${a.desc.substring(0,60)}... <span style="color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();addonToggleDesc('${a.id}')">See more</span></span><span id="afull-${a.id}" style="display:none">${a.desc} <span style="color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();addonToggleDesc('${a.id}')">See less</span></span></div>
         </div>
         <div style="flex-shrink:0;text-align:right;">
-          <div style="font-family:var(--font-display);font-size:22px;color:var(--accent);">+$${a.price}</div>
+          <div style="font-family:var(--font-display);font-size:20px;color:var(--accent);">+${a.price}</div>
           <div class="addon-check" id="check-${a.id}" style="margin-top:6px;font-size:18px;">${selected ? '✅' : '⬜'}</div>
         </div>
       </div>
@@ -996,6 +1001,13 @@ function toggleAddon(id) {
   updateAddonTotal();
 }
 
+
+function addonToggleDesc(id) {
+  const s = document.getElementById('ashort-' + id);
+  const f = document.getElementById('afull-' + id);
+  if (s.style.display !== 'none') { s.style.display = 'none'; f.style.display = 'inline'; }
+  else { s.style.display = 'inline'; f.style.display = 'none'; }
+}
 function updateAddonTotal() {
   const total = booking.addons.reduce((sum, a) => sum + a.price, 0);
   document.getElementById('addonTotalAmt').textContent = '+$' + total;
@@ -1408,14 +1420,13 @@ function renderAddonsAcc() {
   list.innerHTML = ADDONS.map(a => {
     const selected = booking.addons.find(x => x.id === a.id);
     return `
-    <div class="addon-card ${selected ? 'selected' : ''}" id="addon-${a.id}" onclick="toggleAddon('${a.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+    <div class="addon-card ${selected ? 'selected' : ''}" id="addon-${a.id}" >
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;" onclick="toggleAddon('${a.id}')">
         <div style="flex:1;">
-          <div style="font-weight:600;font-size:15px;margin-bottom:4px;">${a.name}</div>
-          <div style="font-size:12px;color:var(--muted);line-height:1.5;">${a.desc}</div>
+          <div style="font-weight:600;font-size:14px;">${a.name}</div><div style="font-size:11px;color:var(--muted);line-height:1.4;margin-top:2px;"><span id="ashort-${a.id}">${a.desc.substring(0,60)}... <span style="color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();addonToggleDesc('${a.id}')">See more</span></span><span id="afull-${a.id}" style="display:none">${a.desc} <span style="color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();addonToggleDesc('${a.id}')">See less</span></span></div>
         </div>
         <div style="flex-shrink:0;text-align:right;">
-          <div style="font-family:var(--font-display);font-size:22px;color:var(--accent);">+$${a.price}</div>
+          <div style="font-family:var(--font-display);font-size:20px;color:var(--accent);">+${a.price}</div>
           <div class="addon-check" id="check-${a.id}" style="margin-top:6px;font-size:18px;">${selected ? '✅' : '⬜'}</div>
         </div>
       </div>
