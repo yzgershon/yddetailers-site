@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YD Detailers — Booking Flow UI Kit</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+.kit-label{position:fixed;top:12px;left:12px;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);border:1px solid var(--border);padding:8px 14px;border-radius:var(--r-pill);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:var(--fw-bold)}
+
+/* ── HEADER (same as marketing nav) ───────────────────── */
+.b-header{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:14px var(--section-px);background:rgba(0,0,0,.95);backdrop-filter:blur(var(--blur-bg));border-bottom:1px solid var(--border-soft)}
+.brand{display:flex;align-items:center;gap:12px;color:var(--text)}
+.brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;letter-spacing:-.5px}
+.brand-name{font-size:15px;font-weight:800;letter-spacing:.2px}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.3px}
+.b-back{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;font-weight:var(--fw-medium);letter-spacing:.3px;transition:color var(--t-base)}
+.b-back:hover{color:#fff}
+
+/* ── HERO (compact, focused on the task) ──────────────── */
+.b-hero{position:relative;padding:52px 24px 32px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border-soft)}
+.b-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 100%,rgba(91,124,250,.12),transparent 70%);pointer-events:none}
+.b-hero::after{content:"";position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+.b-eyebrow{font-size:var(--fs-eyebrow);font-weight:var(--fw-bold);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--blue);margin-bottom:12px}
+.b-hero h1{font-size:clamp(36px,5vw,56px);font-weight:var(--fw-display);letter-spacing:-1.2px;line-height:1.05;margin-bottom:14px}
+.b-hero h1 .blue{color:var(--blue)}
+.b-hero p{color:var(--muted);font-size:14px;max-width:440px;margin:0 auto;line-height:1.7}
+
+/* ── STEPPER ──────────────────────────────────────────── */
+.stepper{display:flex;justify-content:center;padding:0;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto}
+.step{display:flex;align-items:center;gap:10px;padding:20px 18px;min-width:120px;position:relative}
+.step-dot{width:30px;height:30px;border-radius:50%;background:var(--card2);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:var(--fw-bold);color:var(--muted);transition:all var(--t-slow)}
+.step.active .step-dot{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 16px rgba(91,124,250,.4)}
+.step.done .step-dot{background:var(--card3);border-color:var(--blue);color:var(--blue)}
+.step-label{font-size:11px;font-weight:var(--fw-semibold);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.step.active .step-label{color:var(--blue)}
+.step.done .step-label{color:var(--text-soft)}
+.step-sep{width:32px;height:1px;background:var(--border-strong);flex-shrink:0}
+.step-sep.done{background:var(--blue)}
+
+/* ── MAIN CONTAINER ────────────────────────────────────── */
+.b-main{max-width:720px;margin:0 auto;padding:36px 24px 80px}
+
+/* Panel heading */
+.panel-head{margin-bottom:28px}
+.panel-head .eyebrow{margin-bottom:12px}
+.panel-head h2{font-size:clamp(28px,3.4vw,38px);font-weight:var(--fw-display);letter-spacing:-0.6px;margin-bottom:8px}
+.panel-head p{font-size:14px;color:var(--muted);line-height:1.6}
+
+/* ── VEHICLE GRID ─────────────────────────────────────── */
+.veh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.veh{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px 14px 24px;text-align:center;cursor:pointer;transition:all var(--t-base);position:relative;overflow:hidden}
+.veh::before{content:"";position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--blue);transform:scaleX(0);transition:transform var(--t-base)}
+.veh:hover{background:var(--card2);border-color:var(--border-strong)}
+.veh:hover::before{transform:scaleX(.4)}
+.veh.selected{background:var(--card2);border-color:var(--blue)}
+.veh.selected::before{transform:scaleX(1)}
+.veh-icon{display:flex;align-items:center;justify-content:center;margin-bottom:12px;color:var(--muted);transition:color var(--t-base)}
+.veh.selected .veh-icon{color:var(--blue)}
+.veh-name{font-weight:var(--fw-bold);font-size:14px;letter-spacing:var(--ls-tight);margin-bottom:4px}
+.veh-desc{font-size:11px;color:var(--muted);letter-spacing:.3px}
+
+/* ── SERVICE LIST (booking) ───────────────────────────── */
+.svc-list{display:flex;flex-direction:column;gap:14px}
+.svc-row{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;cursor:pointer;transition:all var(--t-base);display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;overflow:hidden}
+.svc-row::after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--blue);transform:scaleY(0);transition:transform var(--t-base)}
+.svc-row:hover{background:var(--card2);border-color:var(--border-strong)}
+.svc-row:hover::after{transform:scaleY(1)}
+.svc-row.selected{background:var(--card2);border-color:var(--blue)}
+.svc-row.selected::after{transform:scaleY(1)}
+.svc-info{flex:1}
+.svc-info h3{font-size:15px;font-weight:var(--fw-bold);letter-spacing:var(--ls-tight);margin-bottom:6px}
+.svc-info p{font-size:12px;color:var(--muted);line-height:1.6}
+.svc-info .dur{font-size:11px;font-weight:var(--fw-semibold);color:var(--muted);margin-top:8px;letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+.svc-price{text-align:right;flex-shrink:0}
+.svc-price .amt{font-size:26px;font-weight:var(--fw-display);color:var(--blue);line-height:1;letter-spacing:-.6px}
+.svc-price .lbl{font-size:10px;font-weight:var(--fw-semibold);color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:3px}
+.addon{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);padding:16px 18px;cursor:pointer;transition:all var(--t-base);display:flex;justify-content:space-between;align-items:center;gap:14px}
+.addon:hover{background:var(--card2);border-color:var(--border-strong)}
+.addon.selected{background:var(--card2);border-color:var(--blue)}
+.addon-info h4{font-size:13px;font-weight:var(--fw-bold);margin-bottom:3px}
+.addon-info p{font-size:11px;color:var(--muted)}
+.addon-price{font-size:15px;font-weight:var(--fw-bold);color:var(--blue)}
+
+/* ── CALENDAR ─────────────────────────────────────────── */
+.cal{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden}
+.cal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--card2)}
+.cal-head h3{font-size:17px;font-weight:var(--fw-bold);letter-spacing:-.3px}
+.cal-nav{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid var(--border-strong);color:var(--text-soft);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all var(--t-fast)}
+.cal-nav:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.cal-body{padding:16px}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}
+.cal-dow span{text-align:center;font-size:11px;font-weight:var(--fw-bold);color:var(--muted);letter-spacing:1px;text-transform:uppercase;padding:6px 0}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);font-size:13px;cursor:pointer;border:2px solid transparent;transition:all var(--t-fast);font-weight:var(--fw-medium)}
+.cal-day.empty{cursor:default}
+.cal-day.past{color:var(--border-strong);cursor:not-allowed}
+.cal-day.available{color:var(--text-soft);background:var(--card2)}
+.cal-day.available:hover{border-color:var(--blue);color:var(--blue)}
+.cal-day.selected{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:var(--fw-bold)}
+
+/* ── TIME SLOTS ───────────────────────────────────────── */
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.slot{background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 8px;text-align:center;cursor:pointer;transition:all var(--t-fast);font-size:13px;font-weight:var(--fw-semibold);color:var(--text-soft)}
+.slot:hover{border-color:var(--blue);color:var(--blue);background:var(--card2)}
+.slot.selected{background:var(--blue);border-color:var(--blue);color:#fff}
+.slot.booked{color:var(--border-strong);cursor:not-allowed;border-color:var(--border);text-decoration:line-through;background:var(--card2)}
+
+/* ── FORM ─────────────────────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{margin-bottom:16px}
+.field.full{grid-column:1 / -1}
+.field label{display:block;font-size:11px;font-weight:var(--fw-bold);color:var(--muted);letter-spacing:1.3px;text-transform:uppercase;margin-bottom:8px}
+.field input,.field textarea,.field select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px 16px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color var(--t-base)}
+.field input:focus,.field textarea:focus{border-color:var(--blue);background:var(--card2)}
+.field input::placeholder,.field textarea::placeholder{color:var(--muted)}
+.field textarea{resize:vertical;min-height:90px}
+
+/* ── SUMMARY ──────────────────────────────────────────── */
+.summary{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:24px}
+.summary h4{font-size:11px;font-weight:var(--fw-bold);letter-spacing:var(--ls-eyebrow);color:var(--blue);margin-bottom:18px;text-transform:uppercase}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
+.sum-row:last-child{border-bottom:0;padding-bottom:0}
+.sum-row .l{color:var(--muted)}
+.sum-row .v{font-weight:var(--fw-semibold);color:var(--text-soft)}
+.sum-row.total{padding-top:16px;margin-top:4px;border-top:2px solid var(--border-strong);border-bottom:0}
+.sum-row.total .l{color:#fff;font-weight:var(--fw-bold);font-size:15px;letter-spacing:.3px;text-transform:uppercase}
+.sum-row.total .v{font-size:28px;font-weight:var(--fw-display);color:var(--blue);letter-spacing:-.5px}
+
+/* ── ACTION BAR ───────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;cursor:pointer;font-family:inherit;transition:all var(--t-base)}
+.act-bar{display:flex;gap:12px;margin-top:28px}
+.btn-primary{flex:1;background:var(--blue);color:#fff;padding:15px 28px;border-radius:var(--r-pill);font-size:15px;font-weight:var(--fw-semibold)}
+.btn-primary:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:var(--shadow-glow)}
+.btn-primary:disabled{background:var(--card3);color:var(--muted);cursor:not-allowed;box-shadow:none;transform:none}
+.btn-secondary{background:rgba(255,255,255,.06);color:var(--text-soft);border:1.5px solid rgba(255,255,255,.25);padding:15px 28px;border-radius:var(--r-pill);font-size:14px;font-weight:var(--fw-semibold)}
+.btn-secondary:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.4);color:#fff}
+
+/* ── CONFIRM SCREEN ───────────────────────────────────── */
+.confirm{text-align:center;padding:48px 20px}
+.confirm-mark{width:76px;height:76px;border-radius:50%;background:rgba(48,200,120,.1);border:2px solid rgba(48,200,120,.35);display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px;color:var(--success)}
+.confirm h2{font-size:clamp(32px,4vw,46px);font-weight:var(--fw-display);letter-spacing:-1px;margin-bottom:12px}
+.confirm p{color:var(--muted);font-size:15px;line-height:1.7;max-width:420px;margin:0 auto 28px}
+.confirm-details{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px 24px;max-width:440px;margin:0 auto 24px;text-align:left}
+.confirm-ref{display:inline-block;padding:6px 14px;background:var(--blue-dim);border:1px solid rgba(91,124,250,.3);border-radius:var(--r-pill);color:var(--blue);font-size:11px;font-weight:var(--fw-bold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:18px;font-family:var(--font-mono)}
+
+/* ── ACCORDION BLOCKS ─────────────────────────────────── */
+.acc{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);margin-bottom:14px;overflow:hidden;transition:border-color var(--t-base)}
+.acc.open{border-color:var(--blue)}
+.acc.done{border-color:rgba(91,124,250,.35)}
+.acc-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px}
+.acc-left{display:flex;align-items:center;gap:14px}
+.acc-n{width:30px;height:30px;border-radius:50%;background:var(--card2);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:var(--fw-bold);color:var(--muted);flex-shrink:0}
+.acc.open .acc-n{background:var(--blue);border-color:var(--blue);color:#fff}
+.acc.done .acc-n{color:var(--blue);border-color:var(--blue)}
+.acc-t{font-size:17px;font-weight:var(--fw-bold);letter-spacing:-.2px}
+.acc-sum{font-size:13px;color:var(--blue);margin-top:2px;font-weight:var(--fw-medium)}
+.acc-edit{font-size:11px;font-weight:var(--fw-bold);color:var(--blue);letter-spacing:1px;text-transform:uppercase;cursor:pointer;padding:7px 14px;border:1px solid rgba(91,124,250,.3);border-radius:var(--r-pill);background:transparent;transition:all var(--t-base)}
+.acc-edit:hover{background:rgba(91,124,250,.1)}
+.acc-body{padding:0 22px 22px}
+
+/* ── PANEL SEPARATOR (between the sample pages) ───────── */
+.kit-divider{padding:60px var(--section-px) 0;max-width:900px;margin:0 auto}
+.kit-divider .dv-eyebrow{font-size:var(--fs-eyebrow);font-weight:var(--fw-bold);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--blue);margin-bottom:12px}
+.kit-divider h3{font-size:22px;font-weight:var(--fw-display);letter-spacing:var(--ls-tight)}
+.kit-divider p{font-size:13px;color:var(--muted);margin-top:6px}
+.kit-divider::after{content:"";display:block;width:60px;height:4px;background:var(--blue);border-radius:2px;margin-top:14px}
+
+@media(max-width:700px){
+  .veh-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+  .veh{padding:16px 8px 14px}
+  .svc-row{padding:16px;gap:10px}
+  .svc-price .amt{font-size:22px}
+  .slots{grid-template-columns:repeat(3,1fr)}
+  .form-grid{grid-template-columns:1fr}
+  .stepper{padding:0}
+  .step{min-width:70px;padding:14px 6px}
+  .step-label{display:none}
+  .step-sep{width:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="kit-label">UI Kit · Booking Flow</div>
+
+<!-- ═════════════════ STATE 1: SELECT VEHICLE ═════════════════ -->
+<header class="b-header">
+  <a class="brand" href="#">
+    <div class="brand-mark">YD</div>
+    <div><div class="brand-name">YD DETAILERS</div><div class="brand-sub">Newton &amp; surrounding towns</div></div>
+  </a>
+  <a class="b-back" href="#">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to site
+  </a>
+</header>
+
+<div class="b-hero" data-screen-label="Booking Hero">
+  <div class="b-eyebrow">Book in 60 seconds</div>
+  <h1>Reserve your <span class="blue">spot.</span></h1>
+  <p>Pick the vehicle, pick the package, pick the day. We'll come to you.</p>
+</div>
+
+<div class="stepper">
+  <div class="step active"><div class="step-dot">1</div><div class="step-label">Vehicle</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">2</div><div class="step-label">Service</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">3</div><div class="step-label">Date &amp; Time</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">4</div><div class="step-label">Details</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">5</div><div class="step-label">Confirm</div></div>
+</div>
+
+<main class="b-main" data-screen-label="Step 1 · Vehicle">
+  <div class="panel-head">
+    <div class="eyebrow">Step 1 of 5</div>
+    <h2>What are we detailing?</h2>
+    <p>Pricing scales with vehicle size. Pick the closest match — we'll confirm exact specs on arrival.</p>
+  </div>
+  <div class="veh-grid">
+    <div class="veh">
+      <div class="veh-icon"><svg width="56" height="32" viewBox="0 0 56 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h48M8 22v-4l4-9h32l4 9v4M14 22v4M42 22v4"/><circle cx="14" cy="24" r="3" fill="currentColor" stroke="none"/><circle cx="42" cy="24" r="3" fill="currentColor" stroke="none"/></svg></div>
+      <div class="veh-name">Sedan</div>
+      <div class="veh-desc">Coupe · Compact</div>
+    </div>
+    <div class="veh selected">
+      <div class="veh-icon"><svg width="56" height="36" viewBox="0 0 56 36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 25h48M8 25v-7l6-10h28l6 10v7M14 25v4M42 25v4"/><circle cx="14" cy="27" r="3" fill="currentColor" stroke="none"/><circle cx="42" cy="27" r="3" fill="currentColor" stroke="none"/></svg></div>
+      <div class="veh-name">SUV</div>
+      <div class="veh-desc">Crossover · Mid</div>
+    </div>
+    <div class="veh">
+      <div class="veh-icon"><svg width="56" height="36" viewBox="0 0 56 36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 25h52M6 25v-8l6-9h18v9h22v8M14 25v4M44 25v4"/><circle cx="14" cy="27" r="3" fill="currentColor" stroke="none"/><circle cx="44" cy="27" r="3" fill="currentColor" stroke="none"/></svg></div>
+      <div class="veh-name">Truck</div>
+      <div class="veh-desc">Pickup · Full-size</div>
+    </div>
+  </div>
+  <div class="act-bar">
+    <button class="btn btn-secondary" disabled style="flex:0 0 auto">Back</button>
+    <button class="btn btn-primary">Continue →</button>
+  </div>
+</main>
+
+<!-- ═════════════════ STATE 2: SELECT SERVICE ═════════════════ -->
+<div class="kit-divider"><div class="dv-eyebrow">Next panel</div><h3>State 2 — Service selection</h3><p>Same chrome, step 2 now active. Accordion summary for the completed step stays visible above.</p></div>
+
+<div class="stepper">
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Vehicle</div></div>
+  <div class="step-sep done"></div>
+  <div class="step active"><div class="step-dot">2</div><div class="step-label">Service</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">3</div><div class="step-label">Date &amp; Time</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">4</div><div class="step-label">Details</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">5</div><div class="step-label">Confirm</div></div>
+</div>
+
+<main class="b-main" data-screen-label="Step 2 · Service">
+  <div class="acc done">
+    <div class="acc-head">
+      <div class="acc-left">
+        <div class="acc-n">✓</div>
+        <div><div class="acc-t">Vehicle</div><div class="acc-sum">SUV · Crossover</div></div>
+      </div>
+      <button class="acc-edit">Edit</button>
+    </div>
+  </div>
+
+  <div class="acc open">
+    <div class="acc-head">
+      <div class="acc-left">
+        <div class="acc-n">2</div>
+        <div class="acc-t">Service</div>
+      </div>
+    </div>
+    <div class="acc-body">
+      <div class="svc-list">
+        <div class="svc-row">
+          <div class="svc-info">
+            <h3>Exterior Detail</h3>
+            <p>Full hand wash, clay bar, sealant, tire dressing.</p>
+            <div class="dur">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              2 HRS · ON-SITE
+            </div>
+          </div>
+          <div class="svc-price"><div class="amt">$180</div><div class="lbl">SUV rate</div></div>
+        </div>
+        <div class="svc-row selected">
+          <div class="svc-info">
+            <h3>Full Detail</h3>
+            <p>Inside &amp; out. Vacuum, wipe-down, leather care, full exterior.</p>
+            <div class="dur">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              3–4 HRS · ON-SITE
+            </div>
+          </div>
+          <div class="svc-price"><div class="amt">$260</div><div class="lbl">SUV rate</div></div>
+        </div>
+        <div class="svc-row">
+          <div class="svc-info">
+            <h3>Ceramic Coating</h3>
+            <p>2-year liquid glass protection. Paint correction included.</p>
+            <div class="dur">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              1 FULL DAY
+            </div>
+          </div>
+          <div class="svc-price"><div class="amt">$750</div><div class="lbl">SUV rate</div></div>
+        </div>
+      </div>
+
+      <div style="margin:24px 0 14px"><div class="eyebrow">Add-ons</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="addon selected">
+          <div class="addon-info"><h4>Pet hair removal</h4><p>Rubber-blade pass on seats &amp; carpet</p></div>
+          <div class="addon-price">+$40</div>
+        </div>
+        <div class="addon">
+          <div class="addon-info"><h4>Headlight restoration</h4><p>Haze &amp; yellowing removed, UV sealed</p></div>
+          <div class="addon-price">+$60</div>
+        </div>
+        <div class="addon">
+          <div class="addon-info"><h4>Engine bay cleaning</h4><p>Dressed &amp; photo-ready</p></div>
+          <div class="addon-price">+$50</div>
+        </div>
+      </div>
+
+      <div class="act-bar">
+        <button class="btn btn-secondary" style="flex:0 0 auto">← Back</button>
+        <button class="btn btn-primary">Continue to date &amp; time →</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═════════════════ STATE 3: DATE & TIME ═════════════════ -->
+<div class="kit-divider"><div class="dv-eyebrow">Next panel</div><h3>State 3 — Date &amp; time picker</h3><p>Calendar + slot grid, side by side on desktop, stacked on mobile.</p></div>
+
+<div class="stepper">
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Vehicle</div></div>
+  <div class="step-sep done"></div>
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Service</div></div>
+  <div class="step-sep done"></div>
+  <div class="step active"><div class="step-dot">3</div><div class="step-label">Date &amp; Time</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">4</div><div class="step-label">Details</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">5</div><div class="step-label">Confirm</div></div>
+</div>
+
+<main class="b-main" data-screen-label="Step 3 · Date &amp; Time">
+  <div class="panel-head">
+    <div class="eyebrow">Step 3 of 5</div>
+    <h2>When should we come?</h2>
+    <p>Pick a date with open availability, then a slot.</p>
+  </div>
+  <div class="cal" style="margin-bottom:24px">
+    <div class="cal-head">
+      <button class="cal-nav" aria-label="prev month"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>March 2025</h3>
+      <button class="cal-nav" aria-label="next month"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    <div class="cal-body">
+      <div class="cal-dow"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+      <div class="cal-days">
+        <div class="cal-day empty"></div><div class="cal-day empty"></div><div class="cal-day empty"></div><div class="cal-day empty"></div>
+        <div class="cal-day empty"></div><div class="cal-day empty"></div>
+        <div class="cal-day past">1</div>
+        <div class="cal-day past">2</div><div class="cal-day past">3</div><div class="cal-day past">4</div>
+        <div class="cal-day past">5</div><div class="cal-day past">6</div><div class="cal-day past">7</div>
+        <div class="cal-day past">8</div>
+        <div class="cal-day available">9</div><div class="cal-day available">10</div>
+        <div class="cal-day available">11</div><div class="cal-day available">12</div>
+        <div class="cal-day available">13</div><div class="cal-day available">14</div>
+        <div class="cal-day available">15</div>
+        <div class="cal-day available">16</div><div class="cal-day available">17</div>
+        <div class="cal-day selected">18</div><div class="cal-day available">19</div>
+        <div class="cal-day available">20</div><div class="cal-day available">21</div>
+        <div class="cal-day available">22</div>
+        <div class="cal-day available">23</div><div class="cal-day available">24</div>
+        <div class="cal-day available">25</div><div class="cal-day available">26</div>
+        <div class="cal-day available">27</div><div class="cal-day available">28</div>
+        <div class="cal-day available">29</div>
+        <div class="cal-day available">30</div><div class="cal-day available">31</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:14px"><div class="eyebrow">Available slots · Tue March 18</div></div>
+  <div class="slots">
+    <div class="slot">8:00a</div>
+    <div class="slot">9:30a</div>
+    <div class="slot booked">11:00a</div>
+    <div class="slot selected">12:30p</div>
+    <div class="slot">2:00p</div>
+    <div class="slot">3:30p</div>
+    <div class="slot booked">5:00p</div>
+    <div class="slot">6:30p</div>
+  </div>
+
+  <div class="act-bar">
+    <button class="btn btn-secondary" style="flex:0 0 auto">← Back</button>
+    <button class="btn btn-primary">Continue →</button>
+  </div>
+</main>
+
+<!-- ═════════════════ STATE 4: DETAILS (form) ═════════════════ -->
+<div class="kit-divider"><div class="dv-eyebrow">Next panel</div><h3>State 4 — Your details</h3><p>Summary sits on top. Form fields with brand styling. CTA shows total.</p></div>
+
+<div class="stepper">
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Vehicle</div></div>
+  <div class="step-sep done"></div>
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Service</div></div>
+  <div class="step-sep done"></div>
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Date &amp; Time</div></div>
+  <div class="step-sep done"></div>
+  <div class="step active"><div class="step-dot">4</div><div class="step-label">Details</div></div>
+  <div class="step-sep"></div>
+  <div class="step"><div class="step-dot">5</div><div class="step-label">Confirm</div></div>
+</div>
+
+<main class="b-main" data-screen-label="Step 4 · Details">
+  <div class="summary">
+    <h4>Booking summary</h4>
+    <div class="sum-row"><div class="l">Vehicle</div><div class="v">SUV · Crossover</div></div>
+    <div class="sum-row"><div class="l">Service</div><div class="v">Full Detail</div></div>
+    <div class="sum-row"><div class="l">Add-on</div><div class="v">Pet hair removal</div></div>
+    <div class="sum-row"><div class="l">Date</div><div class="v">Tue, March 18 · 12:30p</div></div>
+    <div class="sum-row total"><div class="l">Total</div><div class="v">$300</div></div>
+  </div>
+
+  <div class="panel-head">
+    <div class="eyebrow">Step 4 of 5</div>
+    <h2>Where are we going?</h2>
+    <p>Service address + a way to reach you if anything changes.</p>
+  </div>
+
+  <div class="form-grid">
+    <div class="field">
+      <label>First name</label>
+      <input type="text" placeholder="Yurii" value="Michael">
+    </div>
+    <div class="field">
+      <label>Last name</label>
+      <input type="text" placeholder="Demchenko" value="Rivera">
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" placeholder="hello@example.com" value="m.rivera@gmail.com">
+    </div>
+    <div class="field">
+      <label>Phone</label>
+      <input type="tel" placeholder="(555) 010-9111" value="(617) 555-0134">
+    </div>
+    <div class="field full">
+      <label>Service address</label>
+      <input type="text" placeholder="Street address, Newton MA" value="142 Cabot St, Newton, MA 02458">
+    </div>
+    <div class="field full">
+      <label>Notes (optional)</label>
+      <textarea placeholder="Gate code, parking notes, anything we should know…">Side driveway, please park on the left. Hose is on the east side of the house.</textarea>
+    </div>
+  </div>
+
+  <div class="act-bar">
+    <button class="btn btn-secondary" style="flex:0 0 auto">← Back</button>
+    <button class="btn btn-primary">Confirm &amp; pay — $300</button>
+  </div>
+</main>
+
+<!-- ═════════════════ STATE 5: CONFIRMED ═════════════════ -->
+<div class="kit-divider"><div class="dv-eyebrow">Next panel</div><h3>State 5 — Confirmation</h3><p>Success state with reference code, what-happens-next, and a path back to the site.</p></div>
+
+<div class="stepper">
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Vehicle</div></div>
+  <div class="step-sep done"></div>
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Service</div></div>
+  <div class="step-sep done"></div>
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Date &amp; Time</div></div>
+  <div class="step-sep done"></div>
+  <div class="step done"><div class="step-dot">✓</div><div class="step-label">Details</div></div>
+  <div class="step-sep done"></div>
+  <div class="step active"><div class="step-dot">✓</div><div class="step-label">Confirm</div></div>
+</div>
+
+<main class="b-main" data-screen-label="Step 5 · Confirmed">
+  <div class="confirm">
+    <div class="confirm-mark">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="confirm-ref">REF · YDD-8F2A7</div>
+    <h2>You're booked.</h2>
+    <p>We've sent a confirmation to <strong style="color:#fff">m.rivera@gmail.com</strong>. You'll get a reminder 24 hours before your slot.</p>
+
+    <div class="confirm-details">
+      <div class="sum-row"><div class="l">Service</div><div class="v">Full Detail · SUV</div></div>
+      <div class="sum-row"><div class="l">Add-on</div><div class="v">Pet hair removal</div></div>
+      <div class="sum-row"><div class="l">When</div><div class="v">Tue, March 18 · 12:30p</div></div>
+      <div class="sum-row"><div class="l">Where</div><div class="v">142 Cabot St, Newton</div></div>
+      <div class="sum-row"><div class="l">Paid</div><div class="v">$300</div></div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-primary" href="#" style="flex:0 0 auto;padding:14px 30px">Add to calendar</a>
+      <a class="btn btn-secondary" href="#">Back to site</a>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

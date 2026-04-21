@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YD Detailers — Marketing Site UI Kit</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+/* ── Page scaffold ───────────────────────────────────── */
+.kit-label{position:fixed;top:12px;left:12px;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);border:1px solid var(--border);padding:8px 14px;border-radius:var(--r-pill);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:var(--fw-bold)}
+section{padding:var(--section-py) var(--section-px)}
+.wrap{max-width:var(--max-w);margin:0 auto}
+.section-head{margin-bottom:var(--sp-12)}
+.section-head .eyebrow{margin-bottom:var(--sp-3)}
+.section-head h2{font-size:var(--fs-h2);font-weight:var(--fw-display);letter-spacing:var(--ls-h2);margin-bottom:var(--sp-2)}
+.section-head p{color:var(--muted);font-size:var(--fs-body);max-width:640px}
+
+/* ── NAV ─────────────────────────────────────────────── */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 var(--section-px);height:var(--nav-h);background:rgba(0,0,0,.88);backdrop-filter:blur(var(--blur-bg));border-bottom:1px solid var(--border-soft)}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text)}
+.brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--blue) 0%,var(--blue-dark) 100%);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;letter-spacing:-.5px}
+.brand-name{font-size:17px;font-weight:800;letter-spacing:.2px}
+.nav-links{display:flex;gap:32px}
+.nav-links a{color:rgba(255,255,255,.75);font-size:13px;font-weight:var(--fw-medium);letter-spacing:1.2px;text-transform:uppercase;transition:color var(--t-base)}
+.nav-links a:hover{color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;cursor:pointer;font-family:inherit;transition:all var(--t-base);text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--blue);color:#fff;padding:12px 26px;border-radius:var(--r-pill);font-size:14px;font-weight:var(--fw-semibold)}
+.btn-primary:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:var(--shadow-glow)}
+.btn-primary.lg{padding:16px 36px;font-size:15px}
+.btn-outline{background:rgba(255,255,255,.06);color:#fff;padding:15px 30px;border-radius:var(--r-pill);border:1.5px solid rgba(255,255,255,.25);font-size:14px;font-weight:var(--fw-semibold)}
+.btn-outline:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.4)}
+.btn-white{background:#fff;color:#000;padding:13px 28px;border-radius:var(--r-pill);font-size:14px;font-weight:var(--fw-bold)}
+.btn-white:hover{background:#e8eeff;transform:translateY(-1px)}
+.btn-ghost{background:none;color:#fff;padding:13px 8px;font-size:14px;font-weight:var(--fw-semibold);gap:6px;transition:gap var(--t-base)}
+.btn-ghost:hover{gap:10px}
+
+/* ── HERO ───────────────────────────────────────────── */
+.hero{position:relative;height:100vh;min-height:var(--hero-min-h);display:flex;align-items:center;justify-content:center;padding:0 24px;overflow:hidden;background:radial-gradient(ellipse at 30% 20%,#142045 0%,#04040f 70%)}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 800px 400px at 50% 50%,rgba(91,124,250,.15),transparent 70%);pointer-events:none}
+.hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,.015) 2px,rgba(255,255,255,.015) 3px);pointer-events:none}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:860px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(var(--blur-soft));padding:9px 20px;border-radius:var(--r-pill);font-size:14px;font-weight:var(--fw-medium);margin-bottom:28px;color:rgba(255,255,255,.9)}
+.hero-badge .star{color:var(--blue)}
+.hero-title{font-size:var(--fs-display);font-weight:var(--fw-display);letter-spacing:var(--ls-display);line-height:1.05;margin-bottom:22px}
+.hero-title .blue{color:var(--blue)}
+.hero-sub{color:rgba(255,255,255,.7);font-size:17px;max-width:580px;margin:0 auto 34px;line-height:1.65}
+.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.hero-proof{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:34px;z-index:2}
+.hero-proof .p-stat{text-align:center}
+.hero-proof .p-num{font-weight:var(--fw-display);color:var(--blue);font-size:22px;line-height:1}
+.hero-proof .p-lbl{font-size:10px;letter-spacing:var(--ls-tracking);text-transform:uppercase;color:var(--muted);margin-top:4px;font-weight:var(--fw-bold)}
+
+/* ── SERVICES ───────────────────────────────────────── */
+.services{background:var(--bg)}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.svc{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;transition:all var(--t-base);position:relative}
+.svc:hover{border-color:var(--border-strong);transform:translateY(-4px)}
+.svc.featured{border-color:rgba(91,124,250,.4)}
+.svc-pop{background:var(--blue);text-align:center;padding:10px;font-size:11px;font-weight:var(--fw-bold);letter-spacing:var(--ls-tracking);text-transform:uppercase}
+.svc-photo{height:180px;background:linear-gradient(135deg,#0a0a14,#1a1a2e);position:relative;display:flex;align-items:center;justify-content:center;font-size:12px;color:#3a3a52;letter-spacing:3px;text-transform:uppercase}
+.svc-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.5))}
+.svc-body{padding:24px}
+.svc h3{font-size:20px;font-weight:var(--fw-display);letter-spacing:var(--ls-tight);margin-bottom:8px}
+.svc p{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:18px}
+.pricing{background:var(--card2);border-radius:var(--r-md);padding:14px 18px;margin-bottom:18px}
+.pricing-label{font-size:10px;font-weight:var(--fw-bold);letter-spacing:var(--ls-tracking);text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.pricing-row{display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.pricing-row .amount{font-size:20px;font-weight:var(--fw-display)}
+.pricing-row .vtype{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.svc-inc{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.svc-inc li{display:flex;gap:10px;font-size:13px;color:var(--muted);align-items:center}
+.svc-inc .ck{color:var(--blue);font-weight:var(--fw-bold)}
+.svc-reserve{display:block;width:100%;text-align:center;background:var(--blue);color:#fff;padding:12px;border-radius:var(--r-pill);font-weight:var(--fw-bold);font-size:13px;cursor:pointer;border:0}
+.svc-reserve:hover{background:var(--blue-dark)}
+
+/* ── BEFORE/AFTER ───────────────────────────────────── */
+.ba-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r-2xl);padding:32px}
+.ba{position:relative;border-radius:var(--r-xl);overflow:hidden;cursor:col-resize;user-select:none;aspect-ratio:16/8;background:#0a0a14}
+.ba .side{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;letter-spacing:4px;font-size:14px}
+.ba .before{background:linear-gradient(135deg,#14141f 0%,#20202c 100%);color:#4a4a60}
+.ba .after{background:linear-gradient(135deg,#1a2a55 0%,#2a4080 100%);clip-path:inset(0 50% 0 0);color:#c9d4ff}
+.ba .divider{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#fff;transform:translateX(-50%);pointer-events:none;box-shadow:0 0 20px rgba(255,255,255,.5)}
+.ba .handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:#fff;color:#0a0a14;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-md);pointer-events:none}
+.ba .handle svg{width:24px;height:24px}
+.ba .tag{position:absolute;top:16px;padding:7px 14px;border-radius:var(--r-xs);font-size:11px;font-weight:var(--fw-bold);letter-spacing:1.5px;text-transform:uppercase}
+.ba .tag.before{left:16px;background:rgba(0,0,0,.75);color:#fff}
+.ba .tag.after{right:16px;background:var(--blue);color:#fff}
+
+/* ── TESTIMONIALS ───────────────────────────────────── */
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.testi{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:26px;position:relative}
+.testi .quote{position:absolute;top:18px;right:22px;font-family:Georgia,serif;font-weight:900;font-size:52px;color:rgba(255,255,255,.06);line-height:1}
+.testi .stars{color:var(--blue);font-size:15px;letter-spacing:3px;margin-bottom:14px}
+.testi .text{font-size:14px;color:var(--muted);line-height:1.72;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.testi .person{display:flex;align-items:center;gap:12px}
+.testi .ava{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue-dark));display:flex;align-items:center;justify-content:center;font-weight:var(--fw-bold);font-size:14px}
+.testi .name{font-weight:var(--fw-bold);font-size:13px}
+.testi .sub{font-size:11px;color:var(--blue);margin-top:2px;letter-spacing:.5px}
+
+/* ── COMPARE ─────────────────────────────────────────── */
+.cmp{border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;background:var(--card)}
+.cmp-heads{display:grid;grid-template-columns:1fr 1fr}
+.cmp-head{padding:26px 32px}
+.cmp-head.yd{background:linear-gradient(135deg,#0e1840,#0d1535);border-bottom:3px solid var(--blue)}
+.cmp-head.them{background:linear-gradient(135deg,#1e0d0d,#2a1010);border-bottom:3px solid #7a2b2b}
+.cmp-head h3{font-size:19px;font-weight:var(--fw-display);margin-bottom:8px}
+.cmp-badge{display:inline-block;padding:5px 14px;border-radius:var(--r-full);font-size:10px;font-weight:var(--fw-bold);letter-spacing:1.5px;text-transform:uppercase}
+.cmp-badge.yd{background:rgba(91,124,250,.18);color:var(--blue);border:1px solid rgba(91,124,250,.3)}
+.cmp-badge.them{background:rgba(180,60,60,.18);color:var(--warn);border:1px solid rgba(180,60,60,.3)}
+.cmp-rows{display:grid;grid-template-columns:1fr 1fr}
+.cmp-col{padding:12px 32px 22px}
+.cmp-col.yd{background:rgba(91,124,250,.03)}
+.cmp-col.them{background:rgba(180,60,60,.03);border-left:1px solid var(--border)}
+.cmp-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+.cmp-row:last-child{border-bottom:0}
+.cmp-row.them{color:var(--muted)}
+.cmp-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.cmp-icon.yes{background:rgba(48,200,120,.15);color:var(--success);border:1px solid rgba(48,200,120,.25)}
+.cmp-icon.no{background:rgba(224,85,85,.15);color:var(--warn);border:1px solid rgba(224,85,85,.25)}
+
+/* ── STORY ───────────────────────────────────────────── */
+.story{background:var(--bg);padding:var(--section-py) var(--section-px)}
+.story-grid{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center;max-width:var(--max-w);margin:0 auto}
+.story-img{position:relative;border-radius:var(--r-xl);overflow:hidden}
+.story-img .ph{width:100%;height:460px;background:linear-gradient(135deg,#0a0a14,#1a1a2e);display:flex;align-items:center;justify-content:center;color:#444;font-size:13px;letter-spacing:3px;border:1px dashed rgba(255,255,255,.1)}
+.story-badge{position:absolute;bottom:16px;left:16px;right:16px;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);border-radius:var(--r-sm);padding:14px 18px;display:flex;align-items:center;gap:14px}
+.story-badge-num{width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:var(--fw-display);font-size:15px;flex-shrink:0}
+.story-badge-ttl{font-weight:var(--fw-bold);font-size:14px}
+.story-badge-sub{font-size:12px;color:var(--muted)}
+.story h2{font-size:clamp(30px,3.5vw,46px);font-weight:var(--fw-display);line-height:1.12;letter-spacing:-0.5px;margin-bottom:24px}
+.story h2 .blue{color:var(--blue)}
+.story p{font-size:15px;color:var(--muted);line-height:1.8;margin-bottom:16px}
+.story-cta{display:flex;gap:14px;margin-top:28px;flex-wrap:wrap}
+
+/* ── GALLERY ─────────────────────────────────────────── */
+.gallery-stage{background:var(--card);border:1px solid var(--border);border-radius:var(--r-2xl);overflow:hidden}
+.gallery-slide{height:460px;background:linear-gradient(135deg,#0a0a14,#1a1a2e);display:flex;align-items:center;justify-content:center;color:#444;font-size:13px;letter-spacing:3px;position:relative}
+.gallery-slide .tag-meta{position:absolute;bottom:24px;left:24px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);padding:10px 18px;border-radius:var(--r-sm);font-size:12px;color:var(--text-soft);letter-spacing:.5px;text-transform:none}
+.gallery-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-top:1px solid var(--border);background:rgba(0,0,0,.5)}
+.gallery-arrow{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--border);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--t-base)}
+.gallery-arrow:hover{background:var(--blue);border-color:var(--blue)}
+.gallery-title{text-align:center}
+.gallery-title .t{font-size:16px;font-weight:var(--fw-bold)}
+.gallery-title .s{font-size:12px;color:var(--muted);margin-top:2px}
+.gallery-dots{display:flex;gap:6px;justify-content:center;margin-top:18px}
+.gallery-dots .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);transition:all var(--t-base);cursor:pointer}
+.gallery-dots .dot.active{background:var(--blue);width:28px;border-radius:5px}
+
+/* ── FOOTER ──────────────────────────────────────────── */
+footer{padding:48px var(--section-px);border-top:1px solid var(--border);background:#000}
+.ft-grid{max-width:var(--max-w);margin:0 auto;display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px;margin-bottom:32px}
+.ft-col h4{font-size:10px;font-weight:var(--fw-bold);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--blue);margin-bottom:18px}
+.ft-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.ft-col ul li{font-size:13px;color:var(--muted)}
+.ft-col ul a{color:var(--muted);transition:color var(--t-base)}
+.ft-col ul a:hover{color:#fff}
+.ft-desc{font-size:13px;color:var(--muted);line-height:1.7;margin:14px 0 18px;max-width:320px}
+.ft-socials{display:flex;gap:10px}
+.ft-socials a{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all var(--t-base)}
+.ft-socials a:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.ft-bottom{max-width:var(--max-w);margin:0 auto;border-top:1px solid var(--border);padding-top:22px;display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.3)}
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media(max-width:900px){
+  .svc-grid,.testi-grid{grid-template-columns:1fr}
+  .story-grid{grid-template-columns:1fr;gap:36px}
+  .cmp-heads,.cmp-rows{grid-template-columns:1fr}
+  .ft-grid{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+  .hero-proof{gap:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="kit-label">UI Kit · Marketing Site</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="brand" href="#"><div class="brand-mark">YD</div><div class="brand-name">YD DETAILERS</div></a>
+  <div class="nav-links">
+    <a href="#home">Home</a>
+    <a href="#services">Services</a>
+    <a href="#gallery">Gallery</a>
+    <a href="#story">Story</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <a class="btn btn-primary" href="#reserve">Reserve Your Spot</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home" data-screen-label="Hero">
+  <div class="hero-content">
+    <div class="hero-badge"><span class="star">★</span> Rated #1 Mobile Detailer in the Area</div>
+    <h1 class="hero-title">Premium Mobile Detailing<br><span class="blue">That Comes to You.</span></h1>
+    <p class="hero-sub">YD Detailers delivers professional exterior and interior care right at your doorstep. We bring the shine while you save time.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary lg">Reserve Your Spot</button>
+      <button class="btn btn-outline">See Gallery</button>
+    </div>
+  </div>
+  <div class="hero-proof">
+    <div class="p-stat"><div class="p-num">500+</div><div class="p-lbl">Cars Detailed</div></div>
+    <div class="p-stat"><div class="p-num">4.9★</div><div class="p-lbl">Average Rating</div></div>
+    <div class="p-stat"><div class="p-num">24h</div><div class="p-lbl">Response Time</div></div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section class="services" id="services" data-screen-label="Services">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Our Packages</div>
+      <h2>Pick the shine that fits.</h2>
+      <p>Three tiers, one standard. Transparent pricing by vehicle size. Every package includes our satisfaction guarantee.</p>
+    </div>
+    <div class="svc-grid">
+      <div class="svc">
+        <div class="svc-photo">EXTERIOR</div>
+        <div class="svc-body">
+          <h3>Exterior Detail</h3>
+          <p>Full hand wash, clay bar decontamination, sealant and tire dressing. Leaves paint protected and glossy.</p>
+          <div class="pricing">
+            <div class="pricing-label">Starting at</div>
+            <div class="pricing-row">
+              <div><div class="amount">$150</div><div class="vtype">Sedan</div></div>
+              <div><div class="amount">$180</div><div class="vtype">SUV</div></div>
+              <div><div class="amount">$210</div><div class="vtype">Truck</div></div>
+            </div>
+          </div>
+          <ul class="svc-inc">
+            <li><span class="ck">✓</span>Two-bucket hand wash</li>
+            <li><span class="ck">✓</span>Clay bar &amp; sealant</li>
+            <li><span class="ck">✓</span>Tire &amp; trim dressing</li>
+          </ul>
+          <button class="svc-reserve">Reserve</button>
+        </div>
+      </div>
+      <div class="svc featured">
+        <div class="svc-pop">Most Popular</div>
+        <div class="svc-photo">FULL DETAIL</div>
+        <div class="svc-body">
+          <h3>Full Detail</h3>
+          <p>Inside and out. The package busy owners book most — a complete reset for your vehicle.</p>
+          <div class="pricing">
+            <div class="pricing-label">Starting at</div>
+            <div class="pricing-row">
+              <div><div class="amount">$220</div><div class="vtype">Sedan</div></div>
+              <div><div class="amount">$260</div><div class="vtype">SUV</div></div>
+              <div><div class="amount">$300</div><div class="vtype">Truck</div></div>
+            </div>
+          </div>
+          <ul class="svc-inc">
+            <li><span class="ck">✓</span>Everything in Exterior</li>
+            <li><span class="ck">✓</span>Deep vacuum &amp; wipe-down</li>
+            <li><span class="ck">✓</span>Leather conditioning</li>
+          </ul>
+          <button class="svc-reserve">Reserve</button>
+        </div>
+      </div>
+      <div class="svc">
+        <div class="svc-photo">CERAMIC</div>
+        <div class="svc-body">
+          <h3>Ceramic Coating</h3>
+          <p>2-year liquid-glass protection. Adds a hydrophobic finish and resists contaminants season after season.</p>
+          <div class="pricing">
+            <div class="pricing-label">Starting at</div>
+            <div class="pricing-row">
+              <div><div class="amount">$650</div><div class="vtype">Sedan</div></div>
+              <div><div class="amount">$750</div><div class="vtype">SUV</div></div>
+              <div><div class="amount">$850</div><div class="vtype">Truck</div></div>
+            </div>
+          </div>
+          <ul class="svc-inc">
+            <li><span class="ck">✓</span>Paint correction included</li>
+            <li><span class="ck">✓</span>2-year ceramic coating</li>
+            <li><span class="ck">✓</span>Hydrophobic finish</li>
+          </ul>
+          <button class="svc-reserve">Reserve</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE / AFTER -->
+<section data-screen-label="Before/After">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">See The Difference</div>
+      <h2>Drag to reveal.</h2>
+      <p>Real results on real customer cars — not stock photos.</p>
+    </div>
+    <div class="ba-wrap">
+      <div class="ba" id="ba">
+        <div class="side before">BEFORE — MATTE, DUSTY</div>
+        <div class="side after" id="baAfter">AFTER — GLOSSY, PROTECTED</div>
+        <div class="divider" id="baDiv"></div>
+        <div class="handle" id="baHandle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 3 12 9 6"/><polyline points="15 6 21 12 15 18"/></svg>
+        </div>
+        <div class="tag before">Before</div>
+        <div class="tag after">After</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery" data-screen-label="Gallery">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Recent Work</div>
+      <h2>Fresh out the van.</h2>
+      <p>Selected details from the last few weeks of jobs.</p>
+    </div>
+    <div class="gallery-stage">
+      <div class="gallery-slide">
+        EXTERIOR · AUDI Q5
+        <div class="tag-meta">Newton · 2-stage correction + sealant</div>
+      </div>
+      <div class="gallery-bar">
+        <button class="gallery-arrow" aria-label="previous">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="gallery-title"><div class="t">Audi Q5 · Full Detail</div><div class="s">3 hours on-site · Newton</div></div>
+        <button class="gallery-arrow" aria-label="next">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="gallery-dots">
+      <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+  </div>
+</section>
+
+<!-- STORY -->
+<section class="story" id="story" data-screen-label="Story">
+  <div class="story-grid">
+    <div class="story-img">
+      <div class="ph">YURII · PORTRAIT PLACEHOLDER</div>
+      <div class="story-badge">
+        <div class="story-badge-num">3+</div>
+        <div>
+          <div class="story-badge-ttl">Years of experience</div>
+          <div class="story-badge-sub">Certified in paint correction</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="eyebrow" style="margin-bottom:14px">The Story</div>
+      <h2>Built on <span class="blue">obsession for detail.</span></h2>
+      <p>YD Detailers started out of a single-car garage in Newton. Today we run a fully-mobile studio that brings the same care and equipment to your driveway.</p>
+      <p>Every job is done by hand, with premium-only products. We don't book more than we can finish properly — that's the whole difference.</p>
+      <div class="story-cta">
+        <button class="btn btn-white">Meet the team</button>
+        <button class="btn btn-ghost">Read our story →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section data-screen-label="Testimonials">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">What clients say</div>
+      <h2>500+ cars, 4.9-star average.</h2>
+      <p>Real reviews from real customers across Newton, Brookline, Waltham and Needham.</p>
+    </div>
+    <div class="testi-grid">
+      <div class="testi">
+        <div class="quote">"</div>
+        <div class="stars">★★★★★</div>
+        <div class="text">Yurii came to my office, detailed my car during a meeting, and it looked better than the day I bought it. The convenience alone is worth it.</div>
+        <div class="person"><div class="ava">MR</div><div><div class="name">Michael R.</div><div class="sub">Audi Q5 · Newton</div></div></div>
+      </div>
+      <div class="testi">
+        <div class="quote">"</div>
+        <div class="stars">★★★★★</div>
+        <div class="text">Booked online in two minutes, confirmed in another two, showed up on time. My leather seats look brand new.</div>
+        <div class="person"><div class="ava">SK</div><div><div class="name">Sarah K.</div><div class="sub">BMW 5 Series · Brookline</div></div></div>
+      </div>
+      <div class="testi">
+        <div class="quote">"</div>
+        <div class="stars">★★★★★</div>
+        <div class="text">The ceramic coating held up through the Boston winter. Worth every penny. Already booking my next one.</div>
+        <div class="person"><div class="ava">DT</div><div><div class="name">David T.</div><div class="sub">Tesla Model Y · Waltham</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section data-screen-label="Compare">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Why YD</div>
+      <h2>The premium mobile difference.</h2>
+    </div>
+    <div class="cmp">
+      <div class="cmp-heads">
+        <div class="cmp-head yd"><h3>YD Detailers</h3><span class="cmp-badge yd">Premium Mobile</span></div>
+        <div class="cmp-head them"><h3>The Rest</h3><span class="cmp-badge them">Traditional Shop</span></div>
+      </div>
+      <div class="cmp-rows">
+        <div class="cmp-col yd">
+          <div class="cmp-row"><div class="cmp-icon yes">✓</div>We come to you</div>
+          <div class="cmp-row"><div class="cmp-icon yes">✓</div>Online booking in 2 min</div>
+          <div class="cmp-row"><div class="cmp-icon yes">✓</div>Premium-only products</div>
+          <div class="cmp-row"><div class="cmp-icon yes">✓</div>Satisfaction guarantee</div>
+          <div class="cmp-row"><div class="cmp-icon yes">✓</div>Real human communication</div>
+        </div>
+        <div class="cmp-col them">
+          <div class="cmp-row them"><div class="cmp-icon no">✕</div>You drive to them</div>
+          <div class="cmp-row them"><div class="cmp-icon no">✕</div>Phone tag to book</div>
+          <div class="cmp-row them"><div class="cmp-icon no">✕</div>Generic products</div>
+          <div class="cmp-row them"><div class="cmp-icon no">✕</div>No guarantee</div>
+          <div class="cmp-row them"><div class="cmp-icon no">✕</div>"We'll call you back"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="contact" data-screen-label="Footer">
+  <div class="ft-grid">
+    <div>
+      <a class="brand" href="#"><div class="brand-mark">YD</div><div class="brand-name">YD DETAILERS</div></a>
+      <p class="ft-desc">Premium mobile detailing for the greater Newton area. We come to you — home, office, wherever your car lives.</p>
+      <div class="ft-socials">
+        <a href="#" aria-label="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></a>
+        <a href="#" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        <a href="#" aria-label="Google"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20c5 0 9-3.5 9-9h-9v3h5.5A6 6 0 1 1 12 6c1.4 0 2.7.5 3.7 1.4L18 5.2A10 10 0 0 0 12 2z"/></svg></a>
+      </div>
+    </div>
+    <div class="ft-col"><h4>Services</h4><ul>
+      <li><a href="#">Exterior Detail</a></li>
+      <li><a href="#">Full Detail</a></li>
+      <li><a href="#">Ceramic Coating</a></li>
+      <li><a href="#">Headlight Restoration</a></li>
+    </ul></div>
+    <div class="ft-col"><h4>Serving</h4><ul>
+      <li>Newton, MA</li>
+      <li>Brookline</li>
+      <li>Waltham</li>
+      <li>Needham</li>
+      <li>Wellesley</li>
+    </ul></div>
+    <div class="ft-col"><h4>Contact</h4><ul>
+      <li>(555) 010-9111</li>
+      <li>hello@yddetailers.com</li>
+      <li>Mon–Sat · 8a–6p</li>
+    </ul></div>
+  </div>
+  <div class="ft-bottom"><span>© 2025 YD Detailers. All rights reserved.</span><span>Privacy · Terms</span></div>
+</footer>
+
+<script>
+/* Before/After slider (fixed — pointer + touch) */
+(function(){
+  const ba = document.getElementById('ba');
+  const after = document.getElementById('baAfter');
+  const div = document.getElementById('baDiv');
+  const handle = document.getElementById('baHandle');
+  let dragging = false;
+  function setPct(pct){
+    pct = Math.max(0, Math.min(100, pct));
+    after.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+    div.style.left = pct + '%';
+    handle.style.left = pct + '%';
+  }
+  function posFromEvt(e){
+    const r = ba.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    return (x / r.width) * 100;
+  }
+  ba.addEventListener('pointerdown', e => { dragging = true; setPct(posFromEvt(e)); ba.setPointerCapture(e.pointerId); });
+  ba.addEventListener('pointermove', e => { if (dragging) setPct(posFromEvt(e)); });
+  ba.addEventListener('pointerup',   () => { dragging = false; });
+  ba.addEventListener('pointercancel',() => { dragging = false; });
+  setPct(50);
+})();
+</script>
+</body>
+</html>
