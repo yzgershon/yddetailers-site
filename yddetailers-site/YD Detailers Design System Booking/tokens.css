@@ -1,0 +1,145 @@
+/* ─────────────────────────────────────────────────────────
+   YD Detailers — Design Tokens
+   Source: marketing site (main-site/index.html)
+   Use this as the single source of truth for colors, type,
+   spacing, radii, and motion. Import at the top of any page:
+
+     <link rel="stylesheet" href="tokens.css">
+
+   Every token is a CSS variable under :root.
+   ───────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* ── Brand ─────────────────────────────────────────── */
+  --blue: #5b7cfa;          /* primary accent, CTAs, links */
+  --blue-dark: #4a68e0;     /* button hover */
+  --blue-light: #7b96fb;    /* highlights, emphasis */
+  --blue-glow: 0 8px 24px rgba(91, 124, 250, 0.35);
+  --blue-dim: rgba(91, 124, 250, 0.12);
+
+  /* ── Surfaces ──────────────────────────────────────── */
+  --bg: #000000;            /* canvas */
+  --card: #111118;          /* surface 1 */
+  --card2: #16161f;         /* surface 2 (nested) */
+  --card3: #1c1c28;         /* surface 3 (form fields, deeper) */
+
+  /* ── Borders ───────────────────────────────────────── */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-soft: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* ── Text ──────────────────────────────────────────── */
+  --text: #ffffff;
+  --text-soft: #e5e7ef;
+  --muted: #9ca3b8;
+  --muted-dim: rgba(156, 163, 184, 0.5);
+
+  /* ── Status ────────────────────────────────────────── */
+  --success: #30c878;
+  --warn: #e05555;
+
+  /* ── Type ──────────────────────────────────────────── */
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Sizes — clamp()s scale fluidly between mobile & desktop */
+  --fs-display: clamp(44px, 6vw, 72px);
+  --fs-h1: clamp(36px, 4.5vw, 56px);
+  --fs-h2: clamp(28px, 3.2vw, 40px);
+  --fs-h3: 20px;
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --fs-eyebrow: 11px;
+
+  /* Weights */
+  --fw-display: 800;
+  --fw-bold: 700;
+  --fw-semibold: 600;
+  --fw-medium: 500;
+  --fw-regular: 400;
+  --fw-light: 300;
+
+  /* Letter-spacing rules */
+  --ls-display: -1.5px;
+  --ls-h1: -0.6px;
+  --ls-h2: -0.4px;
+  --ls-tight: -0.2px;
+  --ls-eyebrow: 2.5px;       /* eyebrows, UPPER */
+  --ls-tracking: 2px;        /* section labels */
+
+  /* ── Spacing scale (px) ────────────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-22: 90px;
+
+  /* Section rhythm */
+  --section-py: 80px;        /* vertical padding between major sections */
+  --section-px: 40px;        /* horizontal page gutter on desktop */
+  --max-w: 1200px;
+
+  /* ── Radii ─────────────────────────────────────────── */
+  --r-xs: 6px;
+  --r-sm: 10px;              /* inputs, chips */
+  --r-md: 12px;              /* nested boxes, pricing boxes */
+  --r-lg: 14px;              /* testimonials, summary cards */
+  --r-xl: 16px;              /* service cards, gallery */
+  --r-2xl: 20px;             /* hero cards, confirmation */
+  --r-pill: 50px;            /* buttons, badges */
+  --r-full: 9999px;
+
+  /* ── Shadows ───────────────────────────────────────── */
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 8px 24px rgba(91, 124, 250, 0.35);
+
+  /* ── Blur ──────────────────────────────────────────── */
+  --blur-bg: 16px;           /* for sticky nav, overlays */
+  --blur-soft: 8px;          /* badges on imagery */
+
+  /* ── Motion ────────────────────────────────────────── */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --t-fast: 120ms;
+  --t-base: 200ms;
+  --t-slow: 350ms;
+  --t-stagger: 800ms;
+
+  /* ── Layout ────────────────────────────────────────── */
+  --nav-h: 64px;
+  --hero-min-h: 640px;
+}
+
+/* Base resets that belong with tokens */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: var(--blue); text-decoration: none; }
+button { font-family: inherit; }
+
+/* Utility: eyebrow */
+.eyebrow {
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--blue);
+}
