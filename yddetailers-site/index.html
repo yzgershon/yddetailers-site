@@ -562,6 +562,115 @@ nav{transition:height .25s,background .25s;}
   .ba-handle{width:48px;height:48px;}
   .ba-handle svg{width:22px;height:22px;}
 }
+
+/* ── QUICK QUOTE SECTION ─────────────────────────────── */
+.quote-section{
+  background:#000;
+  padding:48px 60px;
+  position:relative;
+  overflow:hidden;
+}
+.quote-section::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 80% at 50% 0%,rgba(91,124,250,0.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+.quote-inner{
+  max-width:760px;margin:0 auto;
+  background:var(--card);
+  border:1px solid rgba(91,124,250,0.22);
+  border-radius:16px;
+  padding:28px 36px;
+  position:relative;
+  box-shadow:0 0 60px rgba(91,124,250,0.06);
+  display:flex;align-items:center;gap:32px;flex-wrap:wrap;
+}
+.quote-text{flex:1;min-width:200px;}
+.quote-form-side{flex:1.4;min-width:260px;}
+.quote-urgency{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(220,50,50,0.1);
+  border:1px solid rgba(220,50,50,0.28);
+  border-radius:50px;padding:5px 13px;
+  font-size:12px;font-weight:700;color:#e05555;
+  margin-top:10px;letter-spacing:0.3px;
+}
+.quote-urgency .qdot{
+  width:7px;height:7px;border-radius:50%;background:#e05555;flex-shrink:0;
+  animation:qdot-pulse 1.5s ease-in-out infinite;
+}
+@keyframes qdot-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(220,50,50,0.55);opacity:1;}
+  50%{box-shadow:0 0 0 7px rgba(220,50,50,0);opacity:0.65;}
+}
+.quote-h2{
+  font-size:clamp(20px,2.4vw,28px);font-weight:800;
+  letter-spacing:-0.4px;line-height:1.15;margin-bottom:6px;
+}
+.quote-h2 .qblue{color:var(--blue);}
+.quote-sub{
+  font-size:14px;color:var(--muted);line-height:1.6;
+  margin-bottom:0;max-width:340px;
+}
+.quote-fields{
+  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;
+}
+.quote-field{flex:1;min-width:130px;}
+.quote-btn-wrap{display:flex;justify-content:center;margin-bottom:8px;}
+.quote-field input{
+  width:100%;
+  background:rgba(255,255,255,0.04);
+  border:1.5px solid rgba(255,255,255,0.1);
+  border-radius:50px;
+  padding:11px 18px;
+  color:#fff;font-family:var(--font);
+  font-size:14px;font-weight:400;
+  outline:none;
+  transition:border-color .2s,background .2s,box-shadow .2s;
+}
+.quote-field input::placeholder{color:rgba(255,255,255,0.28);}
+.quote-field input:focus{
+  border-color:var(--blue);
+  background:rgba(91,124,250,0.06);
+  box-shadow:0 0 0 3px rgba(91,124,250,0.12);
+}
+.quote-field input.qerr{border-color:#e05555 !important;}
+.quote-btn-wrap{
+  overflow:hidden;
+  max-height:0;
+  opacity:0;
+  transition:max-height .3s ease, opacity .25s ease, margin .3s ease;
+  margin-bottom:0;
+}
+.quote-btn-wrap.qbtn-show{
+  max-height:60px;
+  opacity:1;
+  margin-bottom:8px;
+}
+.quote-btn{
+  background:var(--blue);color:#fff;
+  padding:11px 24px;border-radius:50px;
+  font-size:14px;font-weight:700;border:none;
+  cursor:pointer;font-family:var(--font);
+  white-space:nowrap;
+  transition:all .2s;
+}
+.quote-btn:hover{background:var(--blue-dark);transform:translateY(-2px);box-shadow:0 8px 24px rgba(91,124,250,0.42);}
+.quote-note{font-size:11px;color:rgba(255,255,255,0.22);margin-top:8px;}
+/* Success state */
+.quote-success{display:none;text-align:center;padding:8px 0;}
+.quote-success.qshow{display:block;}
+.quote-form-wrap.qhide{display:none;}
+.qs-check{font-size:40px;margin-bottom:10px;}
+.qs-h{font-size:22px;font-weight:800;margin-bottom:8px;letter-spacing:-0.3px;}
+.qs-p{font-size:14px;color:var(--muted);line-height:1.6;max-width:340px;margin:0 auto;}
+.qs-p strong{color:#fff;}
+@media(max-width:768px){
+  .quote-section{padding:36px 20px;}
+  .quote-inner{padding:24px 20px;flex-direction:column;gap:20px;}
+  .quote-fields{flex-direction:column;gap:8px;}
+  .quote-btn{width:100%;text-align:center;}
+}
 </style>
 </head>
 <body>
@@ -577,7 +686,7 @@ nav{transition:height .25s,background .25s;}
   <div class="nav-links">
     <a href="#home">HOME</a>
     <a href="#services">SERVICES</a>
-    <a href="#pricing">PRICING</a>
+    <a href="#reviews">REVIEWS</a>
     <a href="#gallery">GALLERY</a>
   </div>
   <a class='nav-btn' href='booking.html.html'>Reserve Your Spot</a>
@@ -586,7 +695,7 @@ nav{transition:height .25s,background .25s;}
 <div class="mob-menu" id="mobMenu">
   <a href="#home" onclick="closeMob()">HOME</a>
   <a href="#services" onclick="closeMob()">SERVICES</a>
-  <a href="#pricing" onclick="closeMob()">PRICING</a>
+  <a href="#reviews" onclick="closeMob()">REVIEWS</a>
   <a href="#gallery" onclick="closeMob()">GALLERY</a>
   <a class='mob-cta' href='booking.html.html'>Reserve Your Spot</a>
 </div>
@@ -616,6 +725,41 @@ nav{transition:height .25s,background .25s;}
   <div class="scroll-indicator" aria-hidden="true">
     <span>Scroll</span>
     <div class="mouse"></div>
+  </div>
+</section>
+
+<!-- QUICK QUOTE / LEAD CAPTURE -->
+<section class="quote-section reveal" id="quote">
+  <div class="quote-inner">
+    <div class="quote-text">
+      <h2 class="quote-h2">Wondering what it'll cost?<br><span class="qblue">Get a price in 10 seconds.</span></h2>
+      <p class="quote-sub">Drop your name and number — I'll text you a custom quote and answer any questions. No commitment, no spam.</p>
+      <div class="quote-urgency">
+        <span class="qdot"></span>
+        Only 3 openings left this week
+      </div>
+    </div>
+    <div class="quote-form-side">
+    <div class="quote-form-wrap" id="quoteFormWrap">
+      <div class="quote-fields">
+        <div class="quote-field">
+          <input type="text" id="quoteName" placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="quote-field">
+          <input type="tel" id="quotePhone" placeholder="Phone number" autocomplete="tel">
+        </div>
+      </div>
+      <div class="quote-btn-wrap" id="quoteBtnWrap">
+        <button class="quote-btn ripple" onclick="submitQuote()">Text Me a Price &rarr;</button>
+      </div>
+      <p class="quote-note">Your info stays private. I'll only reach out about your detail.</p>
+    </div>
+    <div class="quote-success" id="quoteSuccess">
+      <div class="qs-check">✅</div>
+      <h3 class="qs-h">Got it — you're on the list.</h3>
+      <p class="qs-p">I'll reach out within <strong>2 hours</strong> with a price and to lock in your spot. Keep an eye on your texts.</p>
+    </div>
+    </div>
   </div>
 </section>
 
@@ -662,7 +806,7 @@ nav{transition:height .25s,background .25s;}
 </section>
 
 <!-- SERVICES / PRICING -->
-<section class="services-section reveal" id="services" id="pricing">
+<section class="services-section reveal" id="services"><span id="pricing" style="position:absolute;top:-80px;"></span>
   <div class="svc-label">Our Packages</div>
   <h2 class="svc-h2">Professional Mobile Services</h2>
   <p class="svc-sub">Choose the perfect package for your vehicle's needs. We bring everything required to perform a showroom-quality detail.</p>
@@ -855,7 +999,7 @@ nav{transition:height .25s,background .25s;}
 </section>
 
 <!-- TESTIMONIALS -->
-<section class="testi-section reveal">
+<section class="testi-section reveal" id="reviews">
   <div class="section-title-center">
     <div style="display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:10px;">
       <svg width="18" height="18" viewBox="0 0 48 48" style="vertical-align:middle;"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>
@@ -1251,6 +1395,25 @@ document.querySelectorAll('.svc-card').forEach(card=>{
     card.style.transform='';
   });
 });
+
+// Quick Quote lead capture
+['quoteName','quotePhone'].forEach(id=>{
+  document.getElementById(id).addEventListener('focus',()=>{
+    document.getElementById('quoteBtnWrap').classList.add('qbtn-show');
+  });
+});
+function submitQuote(){
+  const nameEl  = document.getElementById('quoteName');
+  const phoneEl = document.getElementById('quotePhone');
+  const name    = nameEl.value.trim();
+  const phone   = phoneEl.value.trim();
+  let valid = true;
+  if(!name){  nameEl.classList.add('qerr');  valid=false; } else { nameEl.classList.remove('qerr'); }
+  if(!phone){ phoneEl.classList.add('qerr'); valid=false; } else { phoneEl.classList.remove('qerr'); }
+  if(!valid) return;
+  document.getElementById('quoteFormWrap').classList.add('qhide');
+  document.getElementById('quoteSuccess').classList.add('qshow');
+}
 </script>
 </body>
 </html>
