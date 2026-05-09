@@ -1508,6 +1508,15 @@ function submitQuote(){
   if(!name){  nameEl.classList.add('qerr');  valid=false; } else { nameEl.classList.remove('qerr'); }
   if(!phone){ phoneEl.classList.add('qerr'); valid=false; } else { phoneEl.classList.remove('qerr'); }
   if(!valid) return;
+
+  emailjs.send('service_esnmzcc', 'template_fpdoo28', {
+    client_name: name,
+    phone: phone,
+    date: 'QUOTE REQUEST',
+    service: 'Wants a price quote — TEXT THEM',
+    vehicle_model: '', vehicle: '', addons: '', total: '', address: '', notes: '', client_email: ''
+  }).catch(err => console.warn('EmailJS quote lead failed:', err));
+
   document.getElementById('quoteFormWrap').classList.add('qhide');
   document.getElementById('quoteSuccess').classList.add('qshow');
 }
@@ -1521,6 +1530,10 @@ document.addEventListener("DOMContentLoaded",function(){
   },{passive:true});
 });
 </script>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('WGS8dDehkDfSzAnjA');</script>
 
 <!-- STICKY CTA -->
 <div class="yk-sticky" id="yk-sticky">
