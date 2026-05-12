@@ -282,23 +282,28 @@ nav{
 .why-h2{font-size:clamp(32px,4vw,52px);font-weight:800;text-align:center;letter-spacing:-0.5px;margin-bottom:0;}
 .compare-card{max-width:920px;margin:32px auto 0;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);}
 .compare-heads{display:grid;grid-template-columns:1fr 1fr;}
-.compare-head{padding:28px 36px;}
+.compare-head{padding:22px 28px;}
 .compare-head.yd{background:linear-gradient(135deg,#0e1840,#0d1535);border-bottom:3px solid var(--blue);}
 .compare-head.them{background:linear-gradient(135deg,#1e0d0d,#2a1010);border-bottom:3px solid #7a2b2b;}
-.compare-head h3{font-size:22px;font-weight:800;margin-bottom:10px;}
-.cbadge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+.compare-head h3{font-size:18px;font-weight:800;margin-bottom:8px;}
+.cbadge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;}
 .cbadge.yd{background:rgba(91,124,250,0.18);color:var(--blue);border:1px solid rgba(91,124,250,0.3);}
 .cbadge.them{background:rgba(180,60,60,0.18);color:#e05555;border:1px solid rgba(180,60,60,0.3);}
-.compare-rows{display:grid;grid-template-columns:1fr 1fr;}
-.compare-col{padding:8px 36px 24px;}
-.compare-col.yd{background:rgba(91,124,250,0.03);}
-.compare-col.them{background:rgba(180,60,60,0.03);border-left:1px solid rgba(255,255,255,0.06);}
-.crow{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:14px;font-weight:500;}
-.crow:last-child{border-bottom:none;}
-.crow.them{color:var(--muted);}
-.cicon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.cmp-row{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid rgba(255,255,255,0.05);}
+.cmp-row:last-child{border-bottom:none;}
+.cmp-cell{display:flex;align-items:center;gap:12px;padding:15px 28px;font-size:14px;font-weight:500;line-height:1.4;}
+.cmp-cell.yd{background:rgba(91,124,250,0.03);}
+.cmp-cell.them{background:rgba(180,60,60,0.03);border-left:1px solid rgba(255,255,255,0.06);color:var(--muted);}
+.cicon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
 .cicon.yes{background:rgba(46,180,100,0.15);color:#30c878;border:1px solid rgba(46,180,100,0.25);}
 .cicon.no{background:rgba(180,60,60,0.15);color:#e05555;border:1px solid rgba(180,60,60,0.25);}
+@media(max-width:600px){
+  .compare-head{padding:14px 14px;}
+  .compare-head h3{font-size:14px;margin-bottom:5px;}
+  .cbadge{display:none;}
+  .cmp-cell{padding:12px 14px;font-size:12px;gap:8px;}
+  .cicon{width:20px;height:20px;font-size:10px;}
+}
 
 /* ── SERVICES ─────────────────────────────────────────── */
 .services-section{background:transparent;padding:56px 60px;}
@@ -555,8 +560,6 @@ nav{transition:height .25s,background .25s;}
   section,footer,.gallery-section,.why-section,.story-section,.testi-section,.cta-section,.services-section{padding-left:20px;padding-right:20px;}
   .svc-grid{grid-template-columns:1fr;}
   .testi-grid{grid-template-columns:1fr;}
-  .compare-heads,.compare-rows{grid-template-columns:1fr;}
-  .compare-col.them{border-left:none;border-top:1px solid rgba(255,255,255,0.06);}
   .footer-grid{grid-template-columns:1fr;gap:36px;}
   .footer-bottom{flex-direction:column;gap:12px;text-align:center;}
   .hero h1{font-size:36px;letter-spacing:-0.5px;}
@@ -716,7 +719,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
 .yk-area-map-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 42%,rgba(4,4,14,.97) 78%,rgba(4,4,14,1) 100%);pointer-events:none;z-index:2;}
 .yk-area-map-badge{position:absolute;bottom:18px;left:18px;z-index:3;background:rgba(5,5,20,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.11);border-radius:50px;padding:9px 18px;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.82);font-family:var(--font);}
 .yk-area-map-badge::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue);flex-shrink:0;}
-@media(max-width:900px){.yk-area{grid-template-columns:1fr;gap:40px;padding:40px 22px;}.yk-area-map{aspect-ratio:16/9;}}
+@media(max-width:900px){.yk-area{grid-template-columns:1fr;gap:40px;padding:40px 22px;}.yk-area-map{aspect-ratio:1;}.yk-area-map-badge{display:none;}}
 
 /* ── YK STICKY CTA ── */
 .yk-sticky{position:fixed;left:50%;bottom:24px;transform:translate(-50%,200%);background:rgba(5,5,15,.92);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:60px;padding:8px 8px 8px 24px;display:flex;align-items:center;gap:14px;z-index:190;transition:transform .6s cubic-bezier(.2,.8,.2,1);box-shadow:0 18px 56px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.05);white-space:nowrap;}
@@ -1012,19 +1015,21 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
         <span class="cbadge them">THE OTHER GUYS</span>
       </div>
     </div>
-    <div class="compare-rows">
-      <div class="compare-col yd">
-        <div class="crow"><div class="cicon yes">&#10003;</div>Mobile service — we come to your home</div>
-        <div class="crow"><div class="cicon yes">&#10003;</div>Professional-grade products only</div>
-        <div class="crow"><div class="cicon yes">&#10003;</div>Scratch-free two-bucket wash method</div>
-        <div class="crow"><div class="cicon yes">&#10003;</div>Transparent and simple pricing</div>
-      </div>
-      <div class="compare-col them">
-        <div class="crow them"><div class="cicon no">&#10005;</div>Often require you to drop off the car</div>
-        <div class="crow them"><div class="cicon no">&#10005;</div>Use low-quality store-bought products</div>
-        <div class="crow them"><div class="cicon no">&#10005;</div>Risk of scratches from improper washing</div>
-        <div class="crow them"><div class="cicon no">&#10005;</div>Confusing packages and hidden fees</div>
-      </div>
+    <div class="cmp-row">
+      <div class="cmp-cell yd"><div class="cicon yes">&#10003;</div>Mobile — we come to you</div>
+      <div class="cmp-cell them"><div class="cicon no">&#10005;</div>Require you to drop off the car</div>
+    </div>
+    <div class="cmp-row">
+      <div class="cmp-cell yd"><div class="cicon yes">&#10003;</div>Professional-grade products only</div>
+      <div class="cmp-cell them"><div class="cicon no">&#10005;</div>Low-quality store-bought products</div>
+    </div>
+    <div class="cmp-row">
+      <div class="cmp-cell yd"><div class="cicon yes">&#10003;</div>Scratch-free two-bucket wash</div>
+      <div class="cmp-cell them"><div class="cicon no">&#10005;</div>Risk of scratches from improper washing</div>
+    </div>
+    <div class="cmp-row">
+      <div class="cmp-cell yd"><div class="cicon yes">&#10003;</div>Transparent, simple pricing</div>
+      <div class="cmp-cell them"><div class="cicon no">&#10005;</div>Confusing packages &amp; hidden fees</div>
     </div>
   </div>
 </section>
