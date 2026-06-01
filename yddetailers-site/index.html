@@ -735,8 +735,8 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
 .yk-area-item .miles{margin-left:auto;font-size:11px;color:var(--blue);letter-spacing:.1em;}
 .yk-area-item::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--blue);flex-shrink:0;}
 .yk-area-map{position:relative;width:100%;aspect-ratio:4/3;border-radius:20px;overflow:hidden;border:1px solid rgba(91,124,250,.28);box-shadow:0 0 0 1px rgba(91,124,250,.08),0 12px 48px rgba(0,0,0,.7),0 0 80px rgba(91,124,250,.07);}
-.yk-area-map iframe{width:100%;height:100%;display:block;border:0;filter:invert(92%) hue-rotate(180deg) saturate(0.85) brightness(0.88) contrast(0.92);}
-.yk-area-map-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 42%,rgba(4,4,14,.97) 78%,rgba(4,4,14,1) 100%);pointer-events:none;z-index:2;}
+.yk-area-map iframe{width:100%;height:100%;display:block;border:0;}
+.yk-area-map-overlay{display:none;}
 .yk-area-map-badge{position:absolute;bottom:18px;left:18px;z-index:3;background:rgba(5,5,20,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.11);border-radius:50px;padding:9px 18px;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.82);font-family:var(--font);}
 .yk-area-map-badge::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px var(--blue);flex-shrink:0;}
 @media(max-width:900px){.yk-area{grid-template-columns:1fr;gap:40px;padding:40px 22px;}.yk-area-map{aspect-ratio:1;}.yk-area-map-badge{display:none;}}
@@ -810,6 +810,48 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
     .testi-visible{grid-template-columns:1fr !important;max-width:560px !important;}
     .testi-2nd{display:none;}
   }
+  /* Pulsing CTA buttons */
+  @keyframes ctaPulse{
+    0%{box-shadow:0 0 0 0 rgba(91,124,250,0.55);}
+    70%{box-shadow:0 0 0 15px rgba(91,124,250,0);}
+    100%{box-shadow:0 0 0 0 rgba(91,124,250,0);}
+  }
+  @keyframes ctaPulseGold{
+    0%{box-shadow:0 0 0 0 rgba(201,169,110,0.6);}
+    70%{box-shadow:0 0 0 12px rgba(201,169,110,0);}
+    100%{box-shadow:0 0 0 0 rgba(201,169,110,0);}
+  }
+  .pulse-cta{animation:ctaPulse 2.1s ease-out infinite;}
+  .pulse-cta:hover{animation:none;}
+  .yk-sticky .sc-btn.pulse-cta{animation:ctaPulseGold 2.1s ease-out infinite;}
+  .yk-sticky .sc-btn.pulse-cta:hover{animation:none;}
+  @media(prefers-reduced-motion:reduce){.pulse-cta{animation:none !important;}}
+
+  /* FAQ accordion */
+  .faq-section{background:transparent;padding:44px 60px;border-top:1px solid rgba(91,124,250,0.45);}
+  .faq-wrap{max-width:1080px;margin:0 auto;}
+  .faq-head{text-align:center;margin-bottom:30px;}
+  .faq-grid{display:grid;grid-template-columns:1.15fr 0.85fr;gap:44px;align-items:stretch;}
+  .faq-grid .yk-area-map{height:100%;aspect-ratio:auto;min-height:380px;}
+  .faq-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.4em;text-transform:uppercase;color:var(--blue);margin-bottom:14px;font-family:var(--font);}
+  .faq-list{display:flex;flex-direction:column;gap:14px;}
+  .faq-item{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .25s,box-shadow .25s;}
+  .faq-item.open{border-color:rgba(91,124,250,0.45);box-shadow:0 10px 32px rgba(0,0,0,0.35);}
+  .faq-q{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;text-align:left;background:none;border:none;cursor:pointer;color:#fff;font-family:var(--serif);font-size:19px;font-weight:500;padding:18px 22px;line-height:1.3;}
+  .faq-ic{flex-shrink:0;width:28px;height:28px;border-radius:50%;border:1px solid rgba(91,124,250,0.4);background:rgba(91,124,250,0.12);color:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;transition:transform .3s,background .25s,color .25s;font-family:var(--font);}
+  .faq-item.open .faq-ic{transform:rotate(45deg);background:var(--blue);color:#fff;border-color:var(--blue);}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease;}
+  .faq-item.open .faq-a{max-height:520px;}
+  .faq-a-inner{padding:0 24px 22px;color:rgba(255,255,255,0.72);font-size:15.5px;line-height:1.7;font-family:var(--font-body);}
+  @media(max-width:860px){
+    .faq-grid{grid-template-columns:1fr;gap:24px;}
+    .faq-grid .yk-area-map{order:-1;height:auto;aspect-ratio:4/3;min-height:0;}
+  }
+  @media(max-width:600px){
+    .faq-section{padding:34px 18px;}
+    .faq-q{font-size:17px;padding:16px 18px;}
+    .faq-a-inner{padding:0 18px 18px;font-size:14.5px;}
+  }
 </style>
 </head>
 <body>
@@ -838,7 +880,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
     <a href="#reviews">REVIEWS</a>
     <a href="#gallery">GALLERY</a>
   </div>
-  <a class='nav-btn' href='booking.html.html'>Reserve Your Spot</a>
+  <a class='nav-btn pulse-cta' href='#services'>Reserve Your Spot</a>
   <button class="ham" onclick="toggleMenu()"><span></span><span></span><span></span></button>
 </nav>
 <div class="mob-menu" id="mobMenu">
@@ -846,7 +888,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
   <a href="#services" onclick="closeMob()">SERVICES</a>
   <a href="#reviews" onclick="closeMob()">REVIEWS</a>
   <a href="#gallery" onclick="closeMob()">GALLERY</a>
-  <a class='mob-cta' href='booking.html.html'>Reserve Your Spot</a>
+  <a class='mob-cta pulse-cta' href='#services' onclick="closeMob()">Reserve Your Spot</a>
 </div>
 
 <!-- HERO -->
@@ -867,7 +909,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
     <h1>Premium Mobile Detailing<br><span class="blue">That Comes to You.</span></h1>
     <p>YD Detailers delivers professional exterior and interior car care right at your doorstep. We bring the shine while you save time.</p>
     <div class="hero-btns">
-      <a class='btn-primary ripple' href='booking.html.html'>Reserve Your Spot</a>
+      <a class='btn-primary ripple pulse-cta' href='#services'>Reserve Your Spot</a>
     </div>
     <div class="hero-trust">
       <div class="hero-trust-item"><div class="hti">&#10003;</div> Money-Back Guarantee</div>
@@ -954,7 +996,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
   </div>
 
   <div class="gallery-cta">
-    <a class='btn-primary ripple' href='booking.html.html' style='font-size:17px;padding:18px 52px;'>Reserve Your Spot</a>
+    <a class='btn-primary ripple pulse-cta' href='#services' style='font-size:17px;padding:18px 52px;'>Reserve Your Spot</a>
   </div>
 </section>
 
@@ -1064,33 +1106,52 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
 
 
 <!-- SERVICE AREA -->
-<section class="yk-area-section" id="area">
-<div class="yk-area reveal">
-  <div>
-    <span class="yk-area-label">06 &middot; Service Area</span>
-    <h2 class="yk-area-h">Driveways<br>we <em>visit.</em></h2>
-    <p class="yk-area-desc">We serve the greater Boston metro on weekends. Inside our 25-mile radius, we&rsquo;ll be in your driveway by 9 am.</p>
-    <div class="yk-area-list">
-      <div class="yk-area-item">Brookline<span class="miles">3 mi</span></div>
-      <div class="yk-area-item">Newton<span class="miles">5 mi</span></div>
-      <div class="yk-area-item">Cambridge<span class="miles">4 mi</span></div>
-      <div class="yk-area-item">Brighton<span class="miles">2 mi</span></div>
-      <div class="yk-area-item">Watertown<span class="miles">6 mi</span></div>
-      <div class="yk-area-item">Belmont<span class="miles">7 mi</span></div>
-      <div class="yk-area-item">Needham<span class="miles">10 mi</span></div>
-      <div class="yk-area-item">Wellesley<span class="miles">12 mi</span></div>
+<!-- FAQ -->
+<section class="faq-section reveal" id="faq">
+  <div class="faq-wrap">
+    <div class="faq-head">
+      <span class="faq-eyebrow">FAQ</span>
+      <h2 class="why-h2">Frequently Asked Questions</h2>
+      <div class="blue-bar"></div>
     </div>
+    <div class="faq-grid">
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Do you really come to me?<span class="faq-ic">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes — we're fully mobile. We come to your driveway, apartment lot, or office and bring everything needed to get the job done. All we ask for is a parking spot for your vehicle.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">What areas do you serve?<span class="faq-ic">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">We're based in Newton and cover the surrounding Greater Boston area — including Brookline, Watertown, Wellesley, Needham, Belmont, Brighton, Allston, and Cambridge. Not sure if you're in range? Message us and we'll confirm before you book.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Do I need to provide water or power?<span class="faq-ic">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes — please make sure we'll have access to an outdoor water source (a hose spigot) and a power outlet we can reach. We need both to run our equipment and give your car the full detail. If you're unsure about your setup, just let us know when you book and we'll work it out.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">How long does a detail take?<span class="faq-ic">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">It depends on the package. A Premium Exterior runs about 1–2 hours, an Interior Reset about 1.5–2.5 hours, and a Signature Full Detail about 2.5–4 hours. We'll give you a clear time estimate when you book.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">How do I book and pay?<span class="faq-ic">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Pick a package on our site and reserve a time in under a minute. You pay once the detail is finished — we accept cash and major digital payments. Free cancellation up to 12 hours before your appointment.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">What happens if it rains?<span class="faq-ic">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">It depends on your setup. If you have a garage, we can still do the detail inside — rain or shine. If you don't have covered space, we'll reach out to reschedule for the next available day at no extra charge.</div></div>
+      </div>
+    </div><!-- /faq-list -->
+    <div class="yk-area-map reveal">
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d150000!2d-71.2092!3d42.3370!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x637f78e93d5d3c25%3A0x35bfc3d7c0c80f92!2sYDdetailers!5e0!3m2!1sen!2sus"
+        allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+        title="YD Detailers service area — Newton, MA and surrounding towns">
+      </iframe>
+      <div class="yk-area-map-overlay"></div>
+      <a class="yk-area-map-badge" href="https://maps.app.goo.gl/d7aPASgsSf2f7VrZA" target="_blank" rel="noopener">Newton, MA &middot; 25-mi radius</a>
+    </div>
+    </div><!-- /faq-grid -->
   </div>
-  <div class="yk-area-map reveal">
-    <iframe
-      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d150000!2d-71.2092!3d42.3370!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x637f78e93d5d3c25%3A0x35bfc3d7c0c80f92!2sYDdetailers!5e0!3m2!1sen!2sus"
-      allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-      title="YD Detailers service area — Newton, MA and surrounding towns">
-    </iframe>
-    <div class="yk-area-map-overlay"></div>
-    <a class="yk-area-map-badge" href="https://maps.app.goo.gl/d7aPASgsSf2f7VrZA" target="_blank" rel="noopener">Newton, MA &middot; 25-mi radius</a>
-  </div>
-</div>
 </section>
 
 <!-- TESTIMONIALS -->
@@ -1229,6 +1290,12 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
 // Mobile menu
 function toggleMenu(){document.getElementById('mobMenu').classList.toggle('open');}
 function closeMob(){document.getElementById('mobMenu').classList.remove('open');}
+function toggleFaq(btn){
+  const item=btn.parentNode;
+  const wasOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));
+  if(!wasOpen) item.classList.add('open');
+}
 
 // Before/After slider — pointer events (works mouse + touch + pen, no double-fire)
 const baWrap=document.getElementById('baWrap');
@@ -1540,7 +1607,7 @@ document.addEventListener("DOMContentLoaded",function(){
   <span class="sc-sep">|</span>
   <span class="sc-from">From</span>
   <span class="sc-price">$90</span>
-  <a href="booking.html.html" class="sc-btn">Reserve &#8594;</a>
+  <a href="#services" class="sc-btn pulse-cta">Reserve &#8594;</a>
 </div>
 </body>
 </html>
