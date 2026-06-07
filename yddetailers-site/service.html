@@ -51,6 +51,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:cen
 .meta-lbl{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
 .meta-val{font-size:14.5px;color:rgba(255,255,255,0.85);line-height:1.5;}
 .meta-val.blue{color:var(--blue-light);}
+.addons-list{display:flex;flex-direction:column;gap:9px;margin-top:8px;}
+.addon-item{display:flex;align-items:flex-start;gap:11px;background:var(--card2);border:1px solid rgba(91,124,250,0.22);border-radius:11px;padding:11px 14px;transition:border-color .2s;}
+.addon-item:hover{border-color:rgba(91,124,250,0.45);}
+.addon-plus{flex-shrink:0;width:21px;height:21px;border-radius:50%;background:rgba(91,124,250,0.16);border:1px solid rgba(91,124,250,0.4);color:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;margin-top:1px;}
+.addon-name{font-size:14.5px;font-weight:600;color:#fff;line-height:1.35;}
+.addon-desc{font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:3px;}
 
 /* PICKER CARD */
 .picker{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;position:sticky;top:88px;}
@@ -138,7 +144,13 @@ const SERVICES = {
       'Microfiber towel dry'
     ],
     idealFor: 'Drivers who want a fresh, glossy exterior without interior work.',
-    addons: 'Paint decontamination (iron remover + synthetic clay towel)'
+    addons: [
+      { name: 'Ceramic Coating', desc: 'Long-lasting ceramic layer for deep gloss and water-beading protection.' },
+      { name: 'Clay Bar Treatment', desc: 'Strips bonded contaminants for a glass-smooth finish.' },
+      { name: 'Engine Bay Cleaning', desc: 'Degreased and dressed for a showroom-clean engine bay.' },
+      { name: 'Tree Sap Removal', desc: 'Safe removal of hardened sap before it etches the clear coat.' },
+      { name: 'Wax Sealant', desc: 'Hand-applied wax for extra shine and weeks of protection.' }
+    ]
   },
   interior: {
     name: 'Interior Reset Detail',
@@ -155,7 +167,11 @@ const SERVICES = {
       'Streak-free interior glass cleaning'
     ],
     idealFor: 'Daily drivers and family vehicles that need interior renewal.',
-    addons: 'Pet hair removal, stain treatment, odor treatment'
+    addons: [
+      { name: 'Pet Hair Removal', desc: 'Deep extraction of embedded pet hair that vacuuming alone misses.' },
+      { name: 'Interior Protectant', desc: 'UV-blocking coat that guards plastics, vinyl, and leather.' },
+      { name: 'Mat Restoration', desc: 'Deep-scrubbed and refreshed floor mats.' }
+    ]
   },
   full: {
     name: 'Signature Full Vehicle Detail',
@@ -172,7 +188,16 @@ const SERVICES = {
       'Leather cleaning & streak-free glass'
     ],
     idealFor: 'New customers, cars being prepped for sale, or anyone who wants a full reset.',
-    addons: 'Paint decontamination service'
+    addons: [
+      { name: 'Ceramic Coating', desc: 'Long-lasting ceramic layer for deep gloss and water-beading protection.' },
+      { name: 'Clay Bar Treatment', desc: 'Strips bonded contaminants for a glass-smooth finish.' },
+      { name: 'Engine Bay Cleaning', desc: 'Degreased and dressed for a showroom-clean engine bay.' },
+      { name: 'Tree Sap Removal', desc: 'Safe removal of hardened sap before it etches the clear coat.' },
+      { name: 'Wax Sealant', desc: 'Hand-applied wax for extra shine and weeks of protection.' },
+      { name: 'Pet Hair Removal', desc: 'Deep extraction of embedded pet hair that vacuuming alone misses.' },
+      { name: 'Interior Protectant', desc: 'UV-blocking coat that guards plastics, vinyl, and leather.' },
+      { name: 'Mat Restoration', desc: 'Deep-scrubbed and refreshed floor mats.' }
+    ]
   }
 };
 
@@ -195,7 +220,7 @@ document.getElementById('incList').innerHTML = svc.included
 document.getElementById('metaBox').innerHTML = `
   <div class="meta-row"><div class="meta-icon">&#9733;</div><div><div class="meta-lbl">Ideal For</div><div class="meta-val">${svc.idealFor}</div></div></div>
   <div class="meta-row"><div class="meta-icon">&#128336;</div><div><div class="meta-lbl">Time Estimate</div><div class="meta-val">${svc.time}</div></div></div>
-  <div class="meta-row"><div class="meta-icon">+</div><div><div class="meta-lbl">Add-ons Available</div><div class="meta-val blue">${svc.addons}</div></div></div>`;
+  <div class="meta-row"><div class="meta-icon">+</div><div style="flex:1;min-width:0;"><div class="meta-lbl">Add-ons Available</div><div class="addons-list">${svc.addons.map(a => `<div class="addon-item"><span class="addon-plus">+</span><div><div class="addon-name">${a.name}</div><div class="addon-desc">${a.desc}</div></div></div>`).join('')}</div></div></div>`;
 
 function setVeh(v){
   veh = v;
