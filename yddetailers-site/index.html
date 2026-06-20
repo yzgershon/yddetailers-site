@@ -25,7 +25,6 @@ src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
 <meta name="description" content="Professional mobile car detailing in Newton, Waltham, Brookline, Needham and surrounding towns. We come to you. Book online today.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -39,12 +38,20 @@ src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
   --border:rgba(255,255,255,0.08);
   --text:#fff;
   --muted:#9ca3b8;
-  --font:'Manrope','Inter',sans-serif;
-  --font-body:Georgia,'Times New Roman',Times,serif;
-  --serif:'Playfair Display',Georgia,serif;
+  --font:Calibri,'Segoe UI',Tahoma,sans-serif;
+  --font-body:Calibri,'Segoe UI',Tahoma,sans-serif;
+  --serif:Cambria,Georgia,'Times New Roman',serif;
 }
 html{scroll-behavior:smooth;}
-body{background:var(--grad-bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;}
+body{background:var(--grad-bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;}
+/* Section order: Real Results -> Services -> Cost+Reviews -> Our Story -> FAQ */
+.hero{order:1;}
+.gallery-section{order:2;}
+.services-section{order:3;}
+.cr-section{order:4;}
+#story{order:5;}
+.faq-section{order:6;}
+footer{order:7;}
 
 /* ── NAV ─────────────────────────────────────────────── */
 nav{
@@ -137,24 +144,23 @@ nav{
 /* ── Hero trust strip ─────────────────────────────── */
 .hero-trust{
   display:flex;align-items:center;justify-content:center;
-  flex-wrap:wrap;gap:10px 28px;
+  flex-wrap:wrap;gap:12px 26px;
   margin-top:24px;
 }
 .hero-trust-item{
-  display:flex;align-items:center;gap:7px;
+  display:flex;align-items:center;gap:8px;
   font-size:13px;font-weight:500;color:rgba(255,255,255,0.72);
-  white-space:nowrap;
+  white-space:nowrap;line-height:1;
 }
 .hero-trust-item .hti{
   width:22px;height:22px;border-radius:50%;
   background:rgba(91,124,250,0.18);border:1px solid rgba(91,124,250,0.35);
   display:flex;align-items:center;justify-content:center;
-  font-size:11px;flex-shrink:0;color:var(--blue);font-weight:700;
+  font-size:12px;flex-shrink:0;color:var(--blue);font-weight:700;line-height:1;
 }
-.hero-trust-sep{color:rgba(255,255,255,0.18);font-size:18px;line-height:1;}
 @media(max-width:520px){
-  .hero-trust{gap:9px 0;flex-direction:column;align-items:center;}
-  .hero-trust-sep{display:none;}
+  .hero-trust{gap:10px 16px;}
+  .hero-trust-item{font-size:12px;}
 }
 .btn-outline-w{
   display:inline-block;background:rgba(255,255,255,0.06);color:#fff;
@@ -797,11 +803,12 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
   .services-section .svc-arrow{
     position:absolute;top:18px;right:18px;z-index:3;
     width:46px;height:46px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
+    display:flex;align-items:center;justify-content:center;line-height:1;
     background:rgba(10,12,28,0.55);border:1px solid rgba(255,255,255,0.22);
     backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
     color:#fff;font-size:20px;transition:all .3s;
   }
+  .services-section .svc-arrow svg{display:block;}
   .services-section .svc-card:hover .svc-arrow{background:var(--blue);border-color:var(--blue);transform:translateX(4px);}
   .services-section .svc-popular{
     position:absolute;top:18px;left:18px;z-index:3;
@@ -869,11 +876,76 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
     .faq-q{font-size:17px;padding:16px 18px;}
     .faq-a-inner{padding:0 18px 18px;font-size:14.5px;}
   }
+
+  /* ── COST + GOOGLE REVIEWS (combined) ─────────────────── */
+  .cr-section{background:linear-gradient(180deg,#05070f 0%,#000 100%);padding:64px 56px;position:relative;border-top:1px solid rgba(91,124,250,0.28);}
+  .cr-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 65% at 50% -10%,rgba(91,124,250,0.10) 0%,transparent 70%);pointer-events:none;}
+  .cr-grid{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1.05fr 1fr;gap:26px;align-items:stretch;position:relative;}
+  .cr-grid > *{min-width:0;}
+
+  /* Shared glass card */
+  .cr-quote,.cr-reviews{
+    background:linear-gradient(180deg,rgba(20,22,34,0.9),rgba(11,12,19,0.9));
+    border:1px solid rgba(91,124,250,0.18);
+    border-radius:22px;padding:40px;
+    box-shadow:0 24px 70px rgba(0,0,0,0.45);
+    display:flex;flex-direction:column;
+  }
+
+  /* Left — quote */
+  .cr-quote{justify-content:center;}
+  .cr-quote .quote-urgency{align-self:flex-start;margin:0 0 22px;}
+  .cr-quote-h{font-family:var(--serif);font-size:clamp(25px,2.1vw,33px);font-weight:700;letter-spacing:-0.4px;line-height:1.12;margin-bottom:13px;}
+  .cr-quote-h .qblue{color:var(--blue-light);}
+  .cr-quote-sub{font-size:14.5px;color:var(--muted);line-height:1.6;margin-bottom:26px;max-width:430px;}
+  .cr-quote .quote-fields{margin-bottom:0;}
+
+  /* Right — reviews */
+  .cr-rev-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;}
+  .cr-rev-badge{display:inline-flex;align-items:center;gap:9px;font-size:14px;font-weight:700;letter-spacing:0.2px;color:#fff;}
+  .cr-rev-badge svg{flex-shrink:0;}
+  .cr-rev-score{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:#fff;}
+  .cr-rev-score .cr-stars{color:#FBBC05;letter-spacing:1px;font-size:13px;}
+  .cr-rev-score .cr-rev-count{color:var(--muted);font-weight:500;font-size:12.5px;}
+
+  .cr-carousel{flex:1;min-width:0;display:flex;}
+  .cr-track{display:flex;gap:0;width:100%;min-width:0;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .cr-track::-webkit-scrollbar{display:none;}
+  .cr-review{flex:0 0 100%;min-width:0;scroll-snap-align:start;display:flex;flex-direction:column;}
+  .cr-quote-mark{font-family:Georgia,serif;font-size:46px;line-height:1;color:rgba(91,124,250,0.3);margin-bottom:-10px;}
+  .cr-stars-row{color:#FBBC05;font-size:15px;letter-spacing:3px;margin:12px 0 14px;}
+  .cr-text{font-size:15px;line-height:1.72;color:rgba(255,255,255,0.84);margin-bottom:24px;display:-webkit-box;-webkit-line-clamp:8;-webkit-box-orient:vertical;overflow:hidden;}
+  .cr-reviewer{display:flex;align-items:center;gap:12px;margin-top:auto;}
+  .cr-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#8a6cf0);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;color:#fff;}
+  .cr-reviewer-name{font-weight:700;font-size:14.5px;color:#fff;}
+  .cr-reviewer-meta{font-size:12px;color:var(--blue-light);margin-top:2px;display:flex;align-items:center;gap:5px;}
+
+  .cr-controls{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:24px;}
+  .cr-arrow{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.16);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;}
+  .cr-arrow:hover{background:var(--blue);border-color:var(--blue);transform:translateY(-1px);}
+  .cr-arrow svg{width:18px;height:18px;display:block;}
+  .cr-dots{display:flex;gap:7px;align-items:center;}
+  .cr-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;cursor:pointer;padding:0;transition:all .25s;}
+  .cr-dot.active{background:var(--blue);width:20px;border-radius:4px;}
+  .cr-rev-all{align-self:center;margin-top:18px;font-size:13px;font-weight:600;color:var(--blue-light);text-decoration:none;transition:color .2s;}
+  .cr-rev-all:hover{color:#fff;}
+
+  @media(max-width:900px){
+    .cr-section{padding:44px 20px;}
+    .cr-grid{grid-template-columns:1fr;gap:18px;}
+    .cr-quote,.cr-reviews{padding:30px 24px;}
+    /* On mobile: stack reviews ABOVE the quote form */
+    .cr-reviews{order:1;}
+    .cr-quote{order:2;}
+    .cr-text{-webkit-line-clamp:10;}
+  }
+  @media(max-width:600px){
+    .cr-section{padding:36px 15px;}
+    .cr-quote,.cr-reviews{padding:26px 20px;}
+  }
 </style>
 </head>
 <body>
-
-<div class="scroll-progress" id="scrollProgress"></div>
 
 <!-- NAV -->
 <nav>
@@ -887,7 +959,11 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="igGrad" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FEDA75"/><stop offset="0.25" stop-color="#FA7E1E"/><stop offset="0.5" stop-color="#D62976"/><stop offset="0.75" stop-color="#962FBF"/><stop offset="1" stop-color="#4F5BD5"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="url(#igGrad)"/><circle cx="12" cy="12" r="4.5" stroke="url(#igGrad)"/><circle cx="17.5" cy="6.5" r="1" fill="url(#igGrad)" stroke="none"/></svg>
     </a>
     <a href="https://www.tiktok.com/@yddetailers_" target="_blank" rel="noopener" class="nav-soc tt" aria-label="YD Detailers on TikTok">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#25F4EE" transform="translate(-1,-0.4)" d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/>
+        <path fill="#FE2C55" transform="translate(1,0.4)" d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/>
+        <path fill="#FFFFFF" d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z"/>
+      </svg>
     </a>
   </div>
   </div>
@@ -897,7 +973,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
     <a href="#reviews">REVIEWS</a>
     <a href="#gallery">GALLERY</a>
   </div>
-  <a class='nav-btn pulse-cta' href='#services'>Reserve Your Spot</a>
+  <a class='nav-btn pulse-cta' href='booking.html.html'>Reserve Your Spot</a>
   <button class="ham" onclick="toggleMenu()"><span></span><span></span><span></span></button>
 </nav>
 <div class="mob-menu" id="mobMenu">
@@ -905,7 +981,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
   <a href="#services" onclick="closeMob()">SERVICES</a>
   <a href="#reviews" onclick="closeMob()">REVIEWS</a>
   <a href="#gallery" onclick="closeMob()">GALLERY</a>
-  <a class='mob-cta pulse-cta' href='#services' onclick="closeMob()">Reserve Your Spot</a>
+  <a class='mob-cta pulse-cta' href='booking.html.html' onclick="closeMob()">Reserve Your Spot</a>
 </div>
 
 <!-- HERO -->
@@ -926,53 +1002,12 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
     <h1>Premium Mobile Detailing<br><span class="blue">That Comes to You.</span></h1>
     <p>YD Detailers delivers professional exterior and interior car care right at your doorstep. We bring the shine while you save time.</p>
     <div class="hero-btns">
-      <a class='btn-primary ripple pulse-cta' href='#services'>Reserve Your Spot</a>
+      <a class='btn-primary ripple pulse-cta' href='booking.html.html'>Reserve Your Spot</a>
     </div>
     <div class="hero-trust">
       <div class="hero-trust-item"><div class="hti">&#10003;</div> Money-Back Guarantee</div>
-      <div class="hero-trust-sep">&middot;</div>
-      <div class="hero-trust-item"><div class="hti">&#x1F6E1;</div> Fully Insured</div>
-      <div class="hero-trust-sep">&middot;</div>
-      <div class="hero-trust-item"><div class="hti">&#128197;</div> Free Cancellation 12h Prior</div>
-    </div>
-  </div>
-  <div class="scroll-indicator" aria-hidden="true">
-    <span>Scroll</span>
-    <div class="mouse"></div>
-  </div>
-</section>
-
-<!-- QUICK QUOTE / LEAD CAPTURE -->
-<section class="quote-section reveal" id="quote">
-  <div class="quote-inner">
-    <div class="quote-text">
-      <h2 class="quote-h2">Wondering what it'll cost?<br><span class="qblue">Get a price in 10 seconds.</span></h2>
-      <p class="quote-sub">Drop your name and number — I'll text you a custom quote and answer any questions. No commitment, no spam.</p>
-      <div class="quote-urgency">
-        <span class="qdot"></span>
-        Only 3 openings left this week
-      </div>
-    </div>
-    <div class="quote-form-side">
-    <div class="quote-form-wrap" id="quoteFormWrap">
-      <div class="quote-fields">
-        <div class="quote-field">
-          <input type="text" id="quoteName" placeholder="Your name" autocomplete="name">
-        </div>
-        <div class="quote-field">
-          <input type="tel" id="quotePhone" placeholder="Phone number" autocomplete="tel">
-        </div>
-      </div>
-      <div class="quote-btn-wrap" id="quoteBtnWrap">
-        <button class="quote-btn ripple" onclick="submitQuote()">Text Me a Price &rarr;</button>
-      </div>
-      <p class="quote-note">Your info stays private. I'll only reach out about your detail.</p>
-    </div>
-    <div class="quote-success" id="quoteSuccess">
-      <div class="qs-check">✅</div>
-      <h3 class="qs-h">Got it — you're on the list.</h3>
-      <p class="qs-p">I'll reach out within <strong>2 hours</strong> with a price and to lock in your spot. Keep an eye on your texts.</p>
-    </div>
+      <div class="hero-trust-item"><div class="hti">&#10003;</div> Fully Insured</div>
+      <div class="hero-trust-item"><div class="hti">&#10003;</div> Free Cancellation</div>
     </div>
   </div>
 </section>
@@ -1013,7 +1048,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
   </div>
 
   <div class="gallery-cta">
-    <a class='btn-primary ripple pulse-cta' href='#services' style='font-size:17px;padding:18px 52px;'>Reserve Your Spot</a>
+    <a class='btn-primary ripple pulse-cta' href='booking.html.html' style='font-size:17px;padding:18px 52px;'>Reserve Your Spot</a>
   </div>
 </section>
 
@@ -1032,7 +1067,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
         <h3 class="svc-name">Premium Exterior Detail</h3>
         <div class="svc-from">From $90</div>
       </div>
-      <div class="svc-arrow" aria-hidden="true">&#8594;</div>
+      <div class="svc-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg></div>
     </a>
 
     <a class="svc-card" href="service.html?id=interior">
@@ -1043,7 +1078,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
         <h3 class="svc-name">Interior Reset Detail</h3>
         <div class="svc-from">From $150</div>
       </div>
-      <div class="svc-arrow" aria-hidden="true">&#8594;</div>
+      <div class="svc-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg></div>
     </a>
 
     <a class="svc-card featured" href="service.html?id=full">
@@ -1054,43 +1089,8 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
         <h3 class="svc-name">Signature Full Vehicle Detail</h3>
         <div class="svc-from">From $220</div>
       </div>
-      <div class="svc-arrow" aria-hidden="true">&#8594;</div>
+      <div class="svc-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="13 6 19 12 13 18"></polyline></svg></div>
     </a>
-  </div>
-</section>
-
-<!-- WHY CHOOSE -->
-<section class="why-section reveal">
-  <h2 class="why-h2">Why Choose YD Detailers?</h2>
-  <div class="blue-bar"></div>
-  <p style="text-align:center;color:var(--muted);font-size:16px;margin-top:8px;">See how we stack up against the competition.</p>
-  <div class="compare-card">
-    <div class="compare-heads">
-      <div class="compare-head yd">
-        <h3>YD Detailers</h3>
-        <span class="cbadge yd">THE PROFESSIONAL CHOICE</span>
-      </div>
-      <div class="compare-head them">
-        <h3>Typical Detailers</h3>
-        <span class="cbadge them">THE OTHER GUYS</span>
-      </div>
-    </div>
-    <div class="cmp-row">
-      <div class="cmp-cell yd"><div class="cicon yes">&#10003;</div>Mobile — we come to you</div>
-      <div class="cmp-cell them"><div class="cicon no">&#10005;</div>Require you to drop off the car</div>
-    </div>
-    <div class="cmp-row">
-      <div class="cmp-cell yd"><div class="cicon yes">&#10003;</div>Professional-grade products only</div>
-      <div class="cmp-cell them"><div class="cicon no">&#10005;</div>Low-quality store-bought products</div>
-    </div>
-    <div class="cmp-row">
-      <div class="cmp-cell yd"><div class="cicon yes">&#10003;</div>Scratch-free two-bucket wash</div>
-      <div class="cmp-cell them"><div class="cicon no">&#10005;</div>Risk of scratches from improper washing</div>
-    </div>
-    <div class="cmp-row">
-      <div class="cmp-cell yd"><div class="cicon yes">&#10003;</div>Transparent, simple pricing</div>
-      <div class="cmp-cell them"><div class="cicon no">&#10005;</div>Confusing packages &amp; hidden fees</div>
-    </div>
   </div>
 </section>
 
@@ -1108,13 +1108,16 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
     <p class="yk-story-p">No upselling. No fluorescent lobby. Just two clean cars after we leave &mdash; yours, and the one we drove in on.</p>
     <p class="yk-story-p">Beyond the cars, we care about the community we grew up in. In 2026, we helped raise over <strong>$500 for Newton North High School&rsquo;s Business Club</strong> &mdash; because the same community that supports us deserves our support back.</p>
     <div class="yk-story-sig">&mdash; Yishai &amp; Dan</div>
-    <a href="https://www.instagram.com/yddetailers/" target="_blank" rel="noopener" class="btn-insta" style="margin-top:24px;display:inline-flex;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-      Follow us on Instagram
-    </a>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:26px;">
+      <a class="btn-primary ripple" href="booking.html.html" style="padding:15px 38px;font-size:16px;">Book Now &rarr;</a>
+      <a href="https://www.instagram.com/yddetailers/" target="_blank" rel="noopener" class="btn-insta" style="display:inline-flex;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        Follow us on Instagram
+      </a>
+    </div>
     <div class="yk-story-stats">
       <div class="yk-story-stat"><div class="n">2024</div><div class="l">Founded</div></div>
-      <div class="yk-story-stat"><div class="n">200<em>+</em></div><div class="l">Details</div></div>
+      <div class="yk-story-stat"><div class="n">80<em>+</em></div><div class="l">Details</div></div>
       <div class="yk-story-stat"><div class="n">0</div><div class="l">Complaints</div></div>
     </div>
   </div>
@@ -1171,93 +1174,108 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
   </div>
 </section>
 
-<!-- TESTIMONIALS -->
-<section class="testi-section reveal" id="reviews">
-  <div class="section-title-center">
-    <div style="display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:10px;">
-      <svg width="18" height="18" viewBox="0 0 48 48" style="vertical-align:middle;"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>
-      <span>GOOGLE REVIEWS</span>
-    </div>
-    <h2 class="testi-h2">What Our Clients Say</h2>
-    <div class="blue-bar"></div>
-    <p style="margin-top:14px;font-size:15px;color:var(--muted);">
-      <span style="color:var(--blue);font-weight:700;">&#11088; 5.0</span> &middot; Based on 20+ verified Google reviews
-    </p>
-  </div>
-  <!-- Visible: 2 on desktop, 1 on mobile -->
-  <div class="testi-grid reveal-stagger testi-visible" style="grid-template-columns:repeat(2,1fr);max-width:900px;">
-    <div class="testi-card">
-      <div class="testi-stars">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
-      <div class="testi-quote">"</div>
-      <p class="testi-text">"I left for work hoping for the best. These young men were extremely professional and thorough. My car looks as good as the day I bought it. No strong chemical smells or artificial scents needed. Just very clean, shiny, and I personally suggest, as a small business owner, that you give them a try. I have paid more for much less!"</p>
-      <div class="testi-reviewer"><div class="testi-avatar">N</div><div><div class="testi-name">Nicole Cullinan</div><div class="testi-car">Google Review &middot; &#11088;&#11088;&#11088;&#11088;&#11088;</div></div></div>
-    </div>
-    <div class="testi-card testi-2nd">
-      <div class="testi-stars">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
-      <div class="testi-quote">"</div>
-      <p class="testi-text">"They left my Tesla looking new again! It hasn't looked this good since I bought it in 2021! Thank you Yishai and Dan!"</p>
-      <div class="testi-reviewer"><div class="testi-avatar">D</div><div><div class="testi-name">Daniel Johnson</div><div class="testi-car">Google Review &middot; &#11088;&#11088;&#11088;&#11088;&#11088;</div></div></div>
-    </div>
-  </div>
+<!-- COST + GOOGLE REVIEWS (combined) -->
+<section class="cr-section reveal" id="reviews">
+  <div class="cr-grid">
 
-  <!-- Expand button -->
-  <div style="text-align:center;margin-top:24px;">
-    <button class="see-more-btn" id="smb-reviews" onclick="toggleReviews()" style="max-width:320px;margin:0 auto;">
-      <span style="font-size:16px;line-height:1;" id="reviews-plus">+</span>
-      <span class="see-more-text" id="reviews-text">See more reviews</span>
-      <span class="arrow" id="reviews-arrow">&#9660;</span>
-    </button>
-  </div>
-
-  <!-- Hidden 4 more reviews -->
-  <div class="svc-collapsible" id="smc-reviews" style="margin-top:0;">
-    <div class="testi-grid" style="margin-top:20px;">
-      <div class="testi-card">
-        <div class="testi-stars">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
-        <div class="testi-quote">"</div>
-        <p class="testi-text">"I recently had my car detailed by two young guys and I couldn't be more impressed! They did a phenomenal job both inside and out — every surface was spotless, every detail attended to. My car sparkles now just like the day I drove it off the lot. It's clear they take real pride in their work. Highly recommend!"</p>
-        <div class="testi-reviewer"><div class="testi-avatar">M</div><div><div class="testi-name">Mary Good</div><div class="testi-car">Google Review &middot; &#11088;&#11088;&#11088;&#11088;&#11088;</div></div></div>
+    <!-- LEFT: Wondering what it'll cost -->
+    <div class="cr-quote" id="quote">
+      <div class="quote-urgency"><span class="qdot"></span> Only 3 openings left this week</div>
+      <h2 class="cr-quote-h">Wondering what it'll cost?<br><span class="qblue">Get a price in 10 seconds.</span></h2>
+      <p class="cr-quote-sub">Drop your name and number — I'll text you a custom quote and answer any questions. No commitment, no spam.</p>
+      <div class="quote-form-wrap" id="quoteFormWrap">
+        <div class="quote-fields">
+          <div class="quote-field">
+            <input type="text" id="quoteName" placeholder="Your name" autocomplete="name">
+          </div>
+          <div class="quote-field">
+            <input type="tel" id="quotePhone" placeholder="Phone number" autocomplete="tel">
+          </div>
+        </div>
+        <div class="quote-btn-wrap" id="quoteBtnWrap">
+          <button class="quote-btn ripple" onclick="submitQuote()">Text Me a Price &rarr;</button>
+        </div>
+        <p class="quote-note">Your info stays private. I'll only reach out about your detail.</p>
       </div>
-      <div class="testi-card">
-        <div class="testi-stars">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
-        <div class="testi-quote">"</div>
-        <p class="testi-text">"I had these 2 young men detail my car and it turned out great! At first I was skeptical given their age but once I saw them get to work I could see the professionalism — and they really do have all the tools needed. Recommend."</p>
-        <div class="testi-reviewer"><div class="testi-avatar">S</div><div><div class="testi-name">Shiri Katz-Gershon</div><div class="testi-car">Google Review &middot; &#11088;&#11088;&#11088;&#11088;&#11088;</div></div></div>
-      </div>
-      <div class="testi-card">
-        <div class="testi-stars">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
-        <div class="testi-quote">"</div>
-        <p class="testi-text">"I was very impressed with this detailing service run by two very nice young men. They are very thorough and professional, and at a great price too! Highly recommend!"</p>
-        <div class="testi-reviewer"><div class="testi-avatar">J</div><div><div class="testi-name">Judah Kaunfer</div><div class="testi-car">Google Review &middot; &#11088;&#11088;&#11088;&#11088;&#11088;</div></div></div>
-      </div>
-      <div class="testi-card">
-        <div class="testi-stars">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
-        <div class="testi-quote">"</div>
-        <p class="testi-text">"Very professional service and very driven young men who do an amazing job!"</p>
-        <div class="testi-reviewer"><div class="testi-avatar">E</div><div><div class="testi-name">Evyatar Gershon</div><div class="testi-car">Google Review &middot; &#11088;&#11088;&#11088;&#11088;&#11088;</div></div></div>
-      </div>
-      <div class="testi-card">
-        <div class="testi-stars">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
-        <div class="testi-quote">"</div>
-        <p class="testi-text">"YDdetailers did an incredible job on my car. It hasn't looked like this since I first bought my Civic in 2013."</p>
-        <div class="testi-reviewer"><div class="testi-avatar">A</div><div><div class="testi-name">Amitai Zur</div><div class="testi-car">Google Review &middot; &#11088;&#11088;&#11088;&#11088;&#11088;</div></div></div>
+      <div class="quote-success" id="quoteSuccess">
+        <div class="qs-check">✅</div>
+        <h3 class="qs-h">Got it — you're on the list.</h3>
+        <p class="qs-p">I'll reach out within <strong>2 hours</strong> with a price and to lock in your spot. Keep an eye on your texts.</p>
       </div>
     </div>
-    <div style="text-align:center;margin-top:32px;">
-      <a href="https://www.google.com/search?sca_esv=c20d9372e9219eb3&q=YDdetailers&stick=H4sIAAAAAAAAAONgU1I1qDAzNk8zt0i1NE4xTTFONjK1MqgwNk1KSzZOMU82SLYwSLM0WsTKHemSklqSmJmTWlQMAIc5PWE3AAAA" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s;">
-        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>
+
+    <!-- RIGHT: Google reviews carousel -->
+    <div class="cr-reviews">
+      <div class="cr-rev-head">
+        <div class="cr-rev-badge">
+          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>
+          <span>Google Reviews</span>
+        </div>
+        <div class="cr-rev-score"><span class="cr-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span> 5.0 <span class="cr-rev-count">&middot; 20+</span></div>
+      </div>
+
+      <div class="cr-carousel">
+        <div class="cr-track" id="crTrack">
+          <div class="cr-review">
+            <div class="cr-quote-mark">&ldquo;</div>
+            <div class="cr-stars-row">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="cr-text">I left for work hoping for the best. These young men were extremely professional and thorough. My car looks as good as the day I bought it. No strong chemical smells or artificial scents needed. Just very clean, shiny, and I personally suggest, as a small business owner, that you give them a try. I have paid more for much less!</p>
+            <div class="cr-reviewer"><div class="cr-avatar">N</div><div><div class="cr-reviewer-name">Nicole Cullinan</div><div class="cr-reviewer-meta">Verified Google Review</div></div></div>
+          </div>
+          <div class="cr-review">
+            <div class="cr-quote-mark">&ldquo;</div>
+            <div class="cr-stars-row">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="cr-text">They left my Tesla looking new again! It hasn't looked this good since I bought it in 2021! Thank you Yishai and Dan!</p>
+            <div class="cr-reviewer"><div class="cr-avatar">D</div><div><div class="cr-reviewer-name">Daniel Johnson</div><div class="cr-reviewer-meta">Verified Google Review</div></div></div>
+          </div>
+          <div class="cr-review">
+            <div class="cr-quote-mark">&ldquo;</div>
+            <div class="cr-stars-row">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="cr-text">I recently had my car detailed by two young guys and I couldn't be more impressed! They did a phenomenal job both inside and out — every surface was spotless, every detail attended to. My car sparkles now just like the day I drove it off the lot. It's clear they take real pride in their work. Highly recommend!</p>
+            <div class="cr-reviewer"><div class="cr-avatar">M</div><div><div class="cr-reviewer-name">Mary Good</div><div class="cr-reviewer-meta">Verified Google Review</div></div></div>
+          </div>
+          <div class="cr-review">
+            <div class="cr-quote-mark">&ldquo;</div>
+            <div class="cr-stars-row">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="cr-text">I had these 2 young men detail my car and it turned out great! At first I was skeptical given their age but once I saw them get to work I could see the professionalism — and they really do have all the tools needed. Recommend.</p>
+            <div class="cr-reviewer"><div class="cr-avatar">S</div><div><div class="cr-reviewer-name">Shiri Katz-Gershon</div><div class="cr-reviewer-meta">Verified Google Review</div></div></div>
+          </div>
+          <div class="cr-review">
+            <div class="cr-quote-mark">&ldquo;</div>
+            <div class="cr-stars-row">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="cr-text">I was very impressed with this detailing service run by two very nice young men. They are very thorough and professional, and at a great price too! Highly recommend!</p>
+            <div class="cr-reviewer"><div class="cr-avatar">J</div><div><div class="cr-reviewer-name">Judah Kaunfer</div><div class="cr-reviewer-meta">Verified Google Review</div></div></div>
+          </div>
+          <div class="cr-review">
+            <div class="cr-quote-mark">&ldquo;</div>
+            <div class="cr-stars-row">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="cr-text">Very professional service and very driven young men who do an amazing job!</p>
+            <div class="cr-reviewer"><div class="cr-avatar">E</div><div><div class="cr-reviewer-name">Evyatar Gershon</div><div class="cr-reviewer-meta">Verified Google Review</div></div></div>
+          </div>
+          <div class="cr-review">
+            <div class="cr-quote-mark">&ldquo;</div>
+            <div class="cr-stars-row">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="cr-text">YDdetailers did an incredible job on my car. It hasn't looked like this since I first bought my Civic in 2013.</p>
+            <div class="cr-reviewer"><div class="cr-avatar">A</div><div><div class="cr-reviewer-name">Amitai Zur</div><div class="cr-reviewer-meta">Verified Google Review</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cr-controls">
+        <button class="cr-arrow" onclick="crStep(-1)" aria-label="Previous review">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"></polyline></svg>
+        </button>
+        <div class="cr-dots" id="crDots"></div>
+        <button class="cr-arrow" onclick="crStep(1)" aria-label="Next review">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+      </div>
+
+      <a class="cr-rev-all" href="https://www.google.com/search?sca_esv=c20d9372e9219eb3&q=YDdetailers&stick=H4sIAAAAAAAAAONgU1I1qDAzNk8zt0i1NE4xTTFONjK1MqgwNk1KSzZOMU82SLYwSLM0WsTKHemSklqSmJmTWlQMAIc5PWE3AAAA" target="_blank" rel="noopener">
         See all reviews on Google &rarr;
       </a>
     </div>
-  </div>
-</section>
 
-<!-- CTA -->
-<section class="cta-section reveal">
-  <div class="cta-glow"></div>
-  <h2 class="cta-h2">Reserve Your Spot</h2>
-  <div class="cta-btns">
-    <a class='btn-primary ripple' href='booking.html.html' style='font-size:16px;padding:16px 48px;'>Book Now &rarr;</a>
   </div>
 </section>
 
@@ -1457,16 +1475,32 @@ window.addEventListener('load', ()=>{
   },900);
 });
 
-// Reviews toggle
-function toggleReviews() {
-  const col = document.getElementById('smc-reviews');
-  const btn = document.getElementById('smb-reviews');
-  const isOpen = col.classList.contains('open');
-  col.classList.toggle('open', !isOpen);
-  btn.classList.toggle('open', !isOpen);
-  document.getElementById('reviews-text').textContent = isOpen ? 'See more reviews' : 'See less';
-  document.getElementById('reviews-plus').textContent = isOpen ? '+' : '−';
+// Reviews carousel (arrows on desktop, swipe on mobile, dots on both)
+const crTrack = document.getElementById('crTrack');
+function crStep(dir){
+  if(!crTrack) return;
+  crTrack.scrollBy({left: dir * crTrack.clientWidth, behavior:'smooth'});
 }
+function crGoto(i){
+  if(!crTrack) return;
+  crTrack.scrollTo({left: i * crTrack.clientWidth, behavior:'smooth'});
+}
+function crUpdateDots(){
+  if(!crTrack) return;
+  const i = Math.round(crTrack.scrollLeft / crTrack.clientWidth);
+  document.querySelectorAll('.cr-dot').forEach((d,idx)=>d.classList.toggle('active', idx===i));
+}
+(function initReviewCarousel(){
+  if(!crTrack) return;
+  const n = crTrack.querySelectorAll('.cr-review').length;
+  const dots = document.getElementById('crDots');
+  if(dots){
+    let h='';
+    for(let i=0;i<n;i++) h += '<button class="cr-dot'+(i===0?' active':'')+'" onclick="crGoto('+i+')" aria-label="Go to review '+(i+1)+'"></button>';
+    dots.innerHTML = h;
+  }
+  crTrack.addEventListener('scroll', crUpdateDots, {passive:true});
+})();
 
 // See more toggle
 function toggleSeeMore(id) {
@@ -1497,7 +1531,7 @@ function _onScroll(){
   requestAnimationFrame(()=>{
     const h=document.documentElement;
     const pct=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;
-    _scrollProg.style.width=Math.max(0,Math.min(100,pct))+'%';
+    if(_scrollProg)_scrollProg.style.width=Math.max(0,Math.min(100,pct))+'%';
     _nav.classList.toggle('scrolled',h.scrollTop>30);
     _ticking=false;
   });
@@ -1624,7 +1658,7 @@ document.addEventListener("DOMContentLoaded",function(){
   <span class="sc-sep">|</span>
   <span class="sc-from">From</span>
   <span class="sc-price">$90</span>
-  <a href="#services" class="sc-btn pulse-cta">Reserve &#8594;</a>
+  <a href="booking.html.html" class="sc-btn pulse-cta">Reserve &#8594;</a>
 </div>
 </body>
 </html>

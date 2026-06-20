@@ -24,7 +24,6 @@ src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
 <meta name="description" content="Premium mobile car detailing in the Greater Boston area. Choose your package and book online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -33,8 +32,8 @@ src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
   --grad-bg:linear-gradient(160deg,#060d1f 0%,#06090f 35%,#040409 65%,#000 100%);
   --card:#111118;--card2:#16161f;--border:rgba(255,255,255,0.08);
   --text:#fff;--muted:#9ca3b8;
-  --font:'Manrope','Inter',sans-serif;--font-body:Georgia,'Times New Roman',Times,serif;
-  --serif:'Playfair Display',Georgia,serif;
+  --font:Calibri,'Segoe UI',Tahoma,sans-serif;--font-body:Calibri,'Segoe UI',Tahoma,sans-serif;
+  --serif:Cambria,Georgia,'Times New Roman',serif;
 }
 html{scroll-behavior:smooth;}
 body{background:var(--grad-bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;min-height:100vh;}
@@ -69,9 +68,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:cen
 .meta-val{font-size:14.5px;color:rgba(255,255,255,0.85);line-height:1.5;}
 .meta-val.blue{color:var(--blue-light);}
 .addons-list{display:flex;flex-direction:column;gap:9px;margin-top:8px;}
-.addon-item{display:flex;align-items:flex-start;gap:11px;background:var(--card2);border:1px solid rgba(91,124,250,0.22);border-radius:11px;padding:11px 14px;transition:border-color .2s;}
+.addon-item{display:flex;align-items:flex-start;gap:11px;background:var(--card2);border:1px solid rgba(91,124,250,0.22);border-radius:11px;padding:11px 14px;transition:border-color .2s,background .2s;cursor:pointer;user-select:none;-webkit-user-select:none;}
 .addon-item:hover{border-color:rgba(91,124,250,0.45);}
-.addon-plus{flex-shrink:0;width:21px;height:21px;border-radius:50%;background:rgba(91,124,250,0.16);border:1px solid rgba(91,124,250,0.4);color:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;margin-top:1px;}
+.addon-item.selected{border-color:var(--blue);background:rgba(91,124,250,0.12);}
+.addon-plus{flex-shrink:0;width:21px;height:21px;border-radius:50%;background:rgba(91,124,250,0.16);border:1px solid rgba(91,124,250,0.4);color:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;margin-top:1px;transition:all .2s;}
+.addon-item.selected .addon-plus{background:var(--blue);border-color:var(--blue);color:#fff;}
+.addons-hint{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.4;}
 .addon-name{font-size:14.5px;font-weight:600;color:#fff;line-height:1.35;}
 .addon-desc{font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:3px;}
 
@@ -103,8 +105,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:cen
 <body>
 
 <nav>
-  <a href="index.html.html#services" class="nl"><span class="nl-name">YD DETAILERS</span></a>
-  <a href="index.html.html#services" class="nav-back">&#8592; Back to services</a>
+  <a href="index.html#services" class="nl"><span class="nl-name">YD DETAILERS</span></a>
+  <a href="index.html#services" class="nav-back">&#8592; Back to services</a>
 </nav>
 
 <section class="svc-hero">
@@ -162,11 +164,11 @@ const SERVICES = {
     ],
     idealFor: 'Drivers who want a fresh, glossy exterior without interior work.',
     addons: [
-      { name: 'Ceramic Coating', desc: 'Long-lasting ceramic layer for deep gloss and water-beading protection.' },
-      { name: 'Clay Bar Treatment', desc: 'Strips bonded contaminants for a glass-smooth finish.' },
-      { name: 'Engine Bay Cleaning', desc: 'Degreased and dressed for a showroom-clean engine bay.' },
-      { name: 'Tree Sap Removal', desc: 'Safe removal of hardened sap before it etches the clear coat.' },
-      { name: 'Wax Sealant', desc: 'Hand-applied wax for extra shine and weeks of protection.' }
+      { id: 'ceramic', price: 50, name: 'Ceramic Coating', desc: 'Long-lasting ceramic layer for deep gloss and water-beading protection.' },
+      { id: 'clay', price: 40, name: 'Clay Bar Treatment', desc: 'Strips bonded contaminants for a glass-smooth finish.' },
+      { id: 'enginebay', price: 50, name: 'Engine Bay Cleaning', desc: 'Degreased and dressed for a showroom-clean engine bay.' },
+      { id: 'sap', price: 35, name: 'Tree Sap Removal', desc: 'Safe removal of hardened sap before it etches the clear coat.' },
+      { id: 'wax', price: 35, name: 'Wax Sealant', desc: 'Hand-applied wax for extra shine and weeks of protection.' }
     ]
   },
   interior: {
@@ -185,9 +187,9 @@ const SERVICES = {
     ],
     idealFor: 'Daily drivers and family vehicles that need interior renewal.',
     addons: [
-      { name: 'Pet Hair Removal', desc: 'Deep extraction of embedded pet hair that vacuuming alone misses.' },
-      { name: 'Interior Protectant', desc: 'UV-blocking coat that guards plastics, vinyl, and leather.' },
-      { name: 'Mat Restoration', desc: 'Deep-scrubbed and refreshed floor mats.' }
+      { id: 'pethair', price: 30, name: 'Pet Hair Removal', desc: 'Deep extraction of embedded pet hair that vacuuming alone misses.' },
+      { id: 'protectant', price: 30, name: 'Interior Protectant', desc: 'UV-blocking coat that guards plastics, vinyl, and leather.' },
+      { id: 'trim', price: 35, name: 'Mat Restoration', desc: 'Deep-scrubbed and refreshed floor mats.' }
     ]
   },
   full: {
@@ -206,14 +208,14 @@ const SERVICES = {
     ],
     idealFor: 'New customers, cars being prepped for sale, or anyone who wants a full reset.',
     addons: [
-      { name: 'Ceramic Coating', desc: 'Long-lasting ceramic layer for deep gloss and water-beading protection.' },
-      { name: 'Clay Bar Treatment', desc: 'Strips bonded contaminants for a glass-smooth finish.' },
-      { name: 'Engine Bay Cleaning', desc: 'Degreased and dressed for a showroom-clean engine bay.' },
-      { name: 'Tree Sap Removal', desc: 'Safe removal of hardened sap before it etches the clear coat.' },
-      { name: 'Wax Sealant', desc: 'Hand-applied wax for extra shine and weeks of protection.' },
-      { name: 'Pet Hair Removal', desc: 'Deep extraction of embedded pet hair that vacuuming alone misses.' },
-      { name: 'Interior Protectant', desc: 'UV-blocking coat that guards plastics, vinyl, and leather.' },
-      { name: 'Mat Restoration', desc: 'Deep-scrubbed and refreshed floor mats.' }
+      { id: 'ceramic', price: 50, name: 'Ceramic Coating', desc: 'Long-lasting ceramic layer for deep gloss and water-beading protection.' },
+      { id: 'clay', price: 40, name: 'Clay Bar Treatment', desc: 'Strips bonded contaminants for a glass-smooth finish.' },
+      { id: 'enginebay', price: 50, name: 'Engine Bay Cleaning', desc: 'Degreased and dressed for a showroom-clean engine bay.' },
+      { id: 'sap', price: 35, name: 'Tree Sap Removal', desc: 'Safe removal of hardened sap before it etches the clear coat.' },
+      { id: 'wax', price: 35, name: 'Wax Sealant', desc: 'Hand-applied wax for extra shine and weeks of protection.' },
+      { id: 'pethair', price: 30, name: 'Pet Hair Removal', desc: 'Deep extraction of embedded pet hair that vacuuming alone misses.' },
+      { id: 'protectant', price: 30, name: 'Interior Protectant', desc: 'UV-blocking coat that guards plastics, vinyl, and leather.' },
+      { id: 'trim', price: 35, name: 'Mat Restoration', desc: 'Deep-scrubbed and refreshed floor mats.' }
     ]
   }
 };
@@ -237,7 +239,23 @@ document.getElementById('incList').innerHTML = svc.included
 document.getElementById('metaBox').innerHTML = `
   <div class="meta-row"><div class="meta-icon">&#9733;</div><div><div class="meta-lbl">Ideal For</div><div class="meta-val">${svc.idealFor}</div></div></div>
   <div class="meta-row"><div class="meta-icon">&#128336;</div><div><div class="meta-lbl">Time Estimate</div><div class="meta-val">${svc.time}</div></div></div>
-  <div class="meta-row"><div class="meta-icon">+</div><div style="flex:1;min-width:0;"><div class="meta-lbl">Add-ons Available</div><div class="addons-list">${svc.addons.map(a => `<div class="addon-item"><span class="addon-plus">+</span><div><div class="addon-name">${a.name}</div><div class="addon-desc">${a.desc}</div></div></div>`).join('')}</div></div></div>`;
+  <div class="meta-row"><div class="meta-icon">+</div><div style="flex:1;min-width:0;"><div class="meta-lbl">Add-ons — tap to add</div><div class="addons-list">${svc.addons.map(a => `<div class="addon-item" id="addon-${a.id}" onclick="toggleAddonSel('${a.id}')"><span class="addon-plus" id="aplus-${a.id}">+</span><div><div class="addon-name">${a.name}</div><div class="addon-desc">${a.desc}</div></div></div>`).join('')}</div><div class="addons-hint">Anything you pick here carries over to your booking.</div></div></div>`;
+
+const selectedAddons = new Set();
+function toggleAddonSel(addonId){
+  const card = document.getElementById('addon-' + addonId);
+  const plus = document.getElementById('aplus-' + addonId);
+  if (selectedAddons.has(addonId)) {
+    selectedAddons.delete(addonId);
+    card.classList.remove('selected');
+    plus.innerHTML = '+';
+  } else {
+    selectedAddons.add(addonId);
+    card.classList.add('selected');
+    plus.innerHTML = '&#10003;';
+  }
+  render();
+}
 
 function setVeh(v){
   veh = v;
@@ -245,9 +263,16 @@ function setVeh(v){
   render();
 }
 function render(){
-  document.getElementById('priceAmt').textContent = '$' + svc.prices[veh];
-  document.getElementById('priceLbl').textContent = 'Starting price · ' + veh;
-  document.getElementById('bookBtn').href = `booking.html.html?service=${id}&vehicle=${veh}`;
+  let total = svc.prices[veh];
+  svc.addons.forEach(a => { if (selectedAddons.has(a.id)) total += (a.price || 0); });
+  const n = selectedAddons.size;
+  document.getElementById('priceAmt').textContent = '$' + total;
+  document.getElementById('priceLbl').textContent = n
+    ? `${veh} + ${n} add-on${n > 1 ? 's' : ''}`
+    : 'Starting price · ' + veh;
+  let href = `booking.html.html?service=${id}&vehicle=${veh}`;
+  if (n) href += `&addons=${[...selectedAddons].join(',')}`;
+  document.getElementById('bookBtn').href = href;
 }
 render();
 </script>
