@@ -542,8 +542,26 @@ src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
     text-align: left;
   }
 
-  /* HOW DID YOU FIND US — referral survey */
-  .referral-survey { max-width: 420px; margin: 0 auto 28px; text-align: center; }
+  /* HOW DID YOU HEAR ABOUT US — popup modal */
+  .referral-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(4,6,12,0.74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .referral-overlay.show { opacity: 1; pointer-events: auto; }
+  .referral-modal {
+    position: relative; width: 100%; max-width: 440px;
+    background: var(--surface); border: 1px solid var(--border-light); border-radius: 20px;
+    padding: 34px 28px 28px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    transform: translateY(18px) scale(0.96); transition: transform 0.3s cubic-bezier(.2,.8,.25,1);
+  }
+  .referral-overlay.show .referral-modal { transform: translateY(0) scale(1); }
+  .referral-close {
+    position: absolute; top: 12px; right: 14px; background: none; border: none;
+    color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; padding: 4px; transition: color 0.15s;
+  }
+  .referral-close:hover { color: var(--text); }
   .referral-q { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -0.3px; }
   .referral-options { display: flex; flex-direction: column; gap: 10px; }
   .referral-opt {
@@ -988,28 +1006,31 @@ src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
       </div>
       <div class="confirm-details" id="confirmDetails"></div>
 
-      <!-- HOW DID YOU HEAR ABOUT US -->
-      <div class="referral-survey" id="referralSurvey">
-        <div class="referral-q">How did you hear about us?</div>
-        <div class="referral-options" id="referralOptions">
-          <button type="button" class="referral-opt" onclick="pickReferral(this,'Social media (Instagram/Meta/TikTok)')">Social media <span>(Instagram, Meta, TikTok)</span></button>
-          <button type="button" class="referral-opt" onclick="pickReferral(this,'Nextdoor')">Nextdoor</button>
-          <button type="button" class="referral-opt" onclick="pickReferral(this,'Google Search')">Google Search</button>
-          <button type="button" class="referral-opt" onclick="pickReferral(this,'Friend or family')">Friend or family</button>
-          <button type="button" class="referral-opt" onclick="pickReferral(this,'I came up to you because your car was stunning')">I came up to you because your car was stunning</button>
-          <button type="button" class="referral-opt" onclick="pickReferralOther(this)">Other</button>
-        </div>
-        <div class="referral-other-wrap" id="referralOtherWrap" style="display:none;">
-          <input type="text" id="referralOtherInput" class="referral-other-input" placeholder="Tell us how you heard about us…" maxlength="120" oninput="document.getElementById('referralSubmitBtn').disabled = !this.value.trim();">
-        </div>
-        <button class="btn btn-primary referral-submit" id="referralSubmitBtn" onclick="submitReferral()" disabled>Submit</button>
-        <div class="referral-thanks" id="referralThanks" style="display:none;">🙏 Thanks for letting us know!</div>
-      </div>
-
       <button class="btn-book-again" onclick="resetBooking()">Book Another Appointment</button>
     </div>
   </div>
 
+</div>
+
+<!-- HOW DID YOU HEAR ABOUT US — popup -->
+<div class="referral-overlay" id="referralOverlay" onclick="if(event.target===this)closeReferralModal()">
+  <div class="referral-modal">
+    <button class="referral-close" onclick="closeReferralModal()" aria-label="Close">&times;</button>
+    <div class="referral-q">How did you hear about us?</div>
+    <div class="referral-options" id="referralOptions">
+      <button type="button" class="referral-opt" onclick="pickReferral(this,'Social media (Instagram/Meta/TikTok)')">Social media <span>(Instagram, Meta, TikTok)</span></button>
+      <button type="button" class="referral-opt" onclick="pickReferral(this,'Nextdoor')">Nextdoor</button>
+      <button type="button" class="referral-opt" onclick="pickReferral(this,'Google Search')">Google Search</button>
+      <button type="button" class="referral-opt" onclick="pickReferral(this,'Friend or family')">Friend or family</button>
+      <button type="button" class="referral-opt" onclick="pickReferral(this,'I came up to you because your car was stunning')">I came up to you because your car was stunning</button>
+      <button type="button" class="referral-opt" onclick="pickReferralOther(this)">Other</button>
+    </div>
+    <div class="referral-other-wrap" id="referralOtherWrap" style="display:none;">
+      <input type="text" id="referralOtherInput" class="referral-other-input" placeholder="Tell us how you heard about us…" maxlength="120" oninput="document.getElementById('referralSubmitBtn').disabled = !this.value.trim();">
+    </div>
+    <button class="btn btn-primary referral-submit" id="referralSubmitBtn" onclick="submitReferral()" disabled>Submit</button>
+    <div class="referral-thanks" id="referralThanks" style="display:none;">🙏 Thanks for letting us know!</div>
+  </div>
 </div>
 
 <!-- Firebase -->
@@ -1560,14 +1581,17 @@ async function submitBooking() {
       ${EMAIL_ENABLED ? '<div style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6;">📧 Confirmation sent to ' + email + '<br><span style="color:var(--text-soft);">Not in your inbox? Check your spam or junk folder.</span></div>' : ''}
     `;
     goStep(6);
+    setTimeout(openReferralModal, 500);
   } catch(e) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     alert('Something went wrong: ' + e.message);
   }
 }
 
-// ── HOW DID YOU HEAR ABOUT US (referral survey) ───────
+// ── HOW DID YOU HEAR ABOUT US (referral popup) ────────
 let referralValue = null;
+function openReferralModal(){ document.getElementById('referralOverlay').classList.add('show'); }
+function closeReferralModal(){ document.getElementById('referralOverlay').classList.remove('show'); }
 function pickReferral(btn, value) {
   referralValue = value;
   document.querySelectorAll('#referralOptions .referral-opt').forEach(b => b.classList.remove('selected'));
@@ -1609,6 +1633,7 @@ async function submitReferral() {
   document.getElementById('referralOtherWrap').style.display = 'none';
   document.getElementById('referralSubmitBtn').style.display = 'none';
   document.getElementById('referralThanks').style.display = 'block';
+  setTimeout(closeReferralModal, 1500);
 }
 
 function resetBooking() {
@@ -1623,7 +1648,8 @@ function resetBooking() {
   document.getElementById('photoUploadArea').style.borderColor = 'var(--border)';
   ['clientName','clientPhone','clientEmail','clientCar','clientAddress','clientNotes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('timeSection').style.display = 'none';
-  // reset referral survey for the next booking
+  // reset referral popup for the next booking
+  closeReferralModal();
   referralValue = null;
   document.querySelectorAll('#referralOptions .referral-opt').forEach(b => b.classList.remove('selected'));
   document.getElementById('referralOptions').style.display = 'flex';
