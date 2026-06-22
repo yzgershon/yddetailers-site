@@ -542,6 +542,31 @@ src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
     text-align: left;
   }
 
+  /* HOW DID YOU FIND US — referral survey */
+  .referral-survey { max-width: 420px; margin: 0 auto 28px; text-align: center; }
+  .referral-q { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--text); margin-bottom: 16px; letter-spacing: -0.3px; }
+  .referral-options { display: flex; flex-direction: column; gap: 10px; }
+  .referral-opt {
+    width: 100%; text-align: left; padding: 13px 16px; border-radius: 12px;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    color: var(--text-soft); font-family: var(--font-body); font-size: 14.5px; font-weight: 600;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .referral-opt span { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .referral-opt:hover { border-color: var(--border-light); background: var(--surface3); }
+  .referral-opt.selected { border-color: var(--accent); background: var(--accent-dim); color: var(--text); }
+  .referral-opt.selected span { color: var(--text-soft); }
+  .referral-other-wrap { margin-top: 10px; }
+  .referral-other-input {
+    width: 100%; padding: 13px 16px; border-radius: 12px;
+    background: var(--surface); border: 1.5px solid var(--accent);
+    color: var(--text); font-family: var(--font-body); font-size: 14.5px;
+  }
+  .referral-other-input::placeholder { color: var(--muted); }
+  .referral-other-input:focus { outline: none; border-color: var(--accent); box-shadow: var(--accent-glow); }
+  .referral-submit { max-width: 220px; margin: 16px auto 0; display: block; }
+  .referral-thanks { margin-top: 14px; font-size: 14px; font-weight: 600; color: var(--green); }
+
   /* BUTTONS */
   .btn-row { display: flex; gap: 12px; margin-top: 28px; }
   .btn {
@@ -962,6 +987,25 @@ src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
         🚗 <strong style="color:var(--text);">Quick reminder:</strong> Please make sure to remove any personal belongings from your vehicle before we arrive — it helps us do our best work and keeps your items safe.
       </div>
       <div class="confirm-details" id="confirmDetails"></div>
+
+      <!-- HOW DID YOU HEAR ABOUT US -->
+      <div class="referral-survey" id="referralSurvey">
+        <div class="referral-q">How did you hear about us?</div>
+        <div class="referral-options" id="referralOptions">
+          <button type="button" class="referral-opt" onclick="pickReferral(this,'Social media (Instagram/Meta/TikTok)')">Social media <span>(Instagram, Meta, TikTok)</span></button>
+          <button type="button" class="referral-opt" onclick="pickReferral(this,'Nextdoor')">Nextdoor</button>
+          <button type="button" class="referral-opt" onclick="pickReferral(this,'Google Search')">Google Search</button>
+          <button type="button" class="referral-opt" onclick="pickReferral(this,'Friend or family')">Friend or family</button>
+          <button type="button" class="referral-opt" onclick="pickReferral(this,'Saw your work on a car in person')">Saw your work on a car in person</button>
+          <button type="button" class="referral-opt" onclick="pickReferralOther(this)">Other</button>
+        </div>
+        <div class="referral-other-wrap" id="referralOtherWrap" style="display:none;">
+          <input type="text" id="referralOtherInput" class="referral-other-input" placeholder="Tell us how you heard about us…" maxlength="120" oninput="document.getElementById('referralSubmitBtn').disabled = !this.value.trim();">
+        </div>
+        <button class="btn btn-primary referral-submit" id="referralSubmitBtn" onclick="submitReferral()" disabled>Submit</button>
+        <div class="referral-thanks" id="referralThanks" style="display:none;">🙏 Thanks for letting us know!</div>
+      </div>
+
       <button class="btn-book-again" onclick="resetBooking()">Book Another Appointment</button>
     </div>
   </div>
@@ -985,6 +1029,7 @@ const FIREBASE_CONFIG = {
 };
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
+let lastBookingRef = null; // most recent booking doc — used by the referral survey
 
 // ── SERVICES ─────────────────────────────────────────
 const SERVICES = [
@@ -1474,7 +1519,7 @@ async function submitBooking() {
       createdAt: new Date().toISOString()
     };
 
-    await db.collection('bookings').add(data);
+    lastBookingRef = await db.collection('bookings').add(data);
     existingBookings.push(data);
 
     // Send emails via EmailJS
@@ -1512,13 +1557,58 @@ async function submitBooking() {
       <div class="summary-row"><span class="label">Date</span><span class="val">${displayDate}</span></div>
       <div class="summary-row"><span class="label">Time</span><span class="val">${displayTime}</span></div>
       <div class="summary-row total"><span class="label">Total</span><span class="val">$${confirmTotal}</span></div>
-      ${EMAIL_ENABLED ? '<div style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center;">📧 Confirmation sent to ' + email + '</div>' : ''}
+      ${EMAIL_ENABLED ? '<div style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6;">📧 Confirmation sent to ' + email + '<br><span style="color:var(--text-soft);">Not in your inbox? Check your spam or junk folder.</span></div>' : ''}
     `;
     goStep(6);
   } catch(e) {
     document.getElementById('loadingOverlay').classList.add('hidden');
     alert('Something went wrong: ' + e.message);
   }
+}
+
+// ── HOW DID YOU HEAR ABOUT US (referral survey) ───────
+let referralValue = null;
+function pickReferral(btn, value) {
+  referralValue = value;
+  document.querySelectorAll('#referralOptions .referral-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('referralOtherWrap').style.display = 'none';
+  document.getElementById('referralSubmitBtn').disabled = false;
+}
+function pickReferralOther(btn) {
+  referralValue = 'other';
+  document.querySelectorAll('#referralOptions .referral-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('referralOtherWrap').style.display = 'block';
+  const input = document.getElementById('referralOtherInput');
+  input.focus();
+  document.getElementById('referralSubmitBtn').disabled = !input.value.trim();
+}
+async function submitReferral() {
+  let source = referralValue;
+  if (source === 'other') {
+    source = document.getElementById('referralOtherInput').value.trim();
+    if (!source) return;
+    source = 'Other: ' + source;
+  }
+  if (!source) return;
+  document.getElementById('referralSubmitBtn').disabled = true;
+  const payload = { referralSource: source, referralAt: new Date().toISOString() };
+  try {
+    if (lastBookingRef) {
+      await lastBookingRef.update(payload);
+    } else {
+      await db.collection('referrals').add(payload);
+    }
+  } catch(e) {
+    console.warn('Referral update failed, saving to referrals collection:', e);
+    try { await db.collection('referrals').add({ ...payload, bookingId: lastBookingRef ? lastBookingRef.id : null }); }
+    catch(e2) { console.warn('Referral save failed entirely:', e2); }
+  }
+  document.getElementById('referralOptions').style.display = 'none';
+  document.getElementById('referralOtherWrap').style.display = 'none';
+  document.getElementById('referralSubmitBtn').style.display = 'none';
+  document.getElementById('referralThanks').style.display = 'block';
 }
 
 function resetBooking() {
@@ -1533,6 +1623,15 @@ function resetBooking() {
   document.getElementById('photoUploadArea').style.borderColor = 'var(--border)';
   ['clientName','clientPhone','clientEmail','clientCar','clientAddress','clientNotes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('timeSection').style.display = 'none';
+  // reset referral survey for the next booking
+  referralValue = null;
+  document.querySelectorAll('#referralOptions .referral-opt').forEach(b => b.classList.remove('selected'));
+  document.getElementById('referralOptions').style.display = 'flex';
+  document.getElementById('referralOtherWrap').style.display = 'none';
+  document.getElementById('referralOtherInput').value = '';
+  const rsb = document.getElementById('referralSubmitBtn');
+  rsb.style.display = 'block'; rsb.disabled = true;
+  document.getElementById('referralThanks').style.display = 'none';
   updatePriceBar();
   goStep(1);
 }
