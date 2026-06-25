@@ -484,16 +484,15 @@ a { color: inherit; text-decoration: none; }
 <body>
 
 <!-- Password Gate -->
-<div id="passwordGate" class="gate hidden">
+<div id="authGate" class="gate hidden">
   <div class="gate-card">
     <div class="gate-logo">
       <div class="mark">D</div>
       <div><span class="lo">Detail</span><span class="hi">CRM</span></div>
     </div>
-    <p class="gate-sub">Enter password to continue</p>
-    <input type="password" id="passwordInput" placeholder="Password" autocomplete="off">
-    <div class="gate-error" id="passwordError"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:14px;justify-content:center" onclick="checkPassword()">Unlock</button>
+    <p class="gate-sub">Sign in to continue</p>
+    <button class="btn btn-primary" style="width:100%;margin-top:14px;justify-content:center" onclick="signInWithGoogle()">Sign in with Google</button>
+    <div class="gate-error" id="authError"></div>
   </div>
 </div>
 
@@ -936,6 +935,14 @@ a { color: inherit; text-decoration: none; }
               <button class="btn btn-danger" onclick="clearAllClients()">Clear All Clients</button>
             </div>
           </div>
+
+          <div class="card">
+            <div class="card-head"><div><h3>Account</h3></div></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+              <div class="field"><label>Signed in as</label><div id="setAccountEmail" style="font-family:var(--font-mono);font-size:13px;color:var(--text-2)">—</div></div>
+              <button class="btn btn-secondary" onclick="signOutCrm()">Sign out</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1126,12 +1133,12 @@ a { color: inherit; text-decoration: none; }
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
 <script>
 /* ─────────────────────────────────────────────────────────
    APP STATE & DATA
    ───────────────────────────────────────────────────────── */
-const PASSWORD = '1milby20';
 const HARDCODED_FIREBASE = {
   apiKey: "AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E",
   authDomain: "yddetailers.firebaseapp.com",
@@ -1166,16 +1173,9 @@ const LS = {
 
 /* ─── Boot ─── */
 window.addEventListener('DOMContentLoaded', () => {
-  // Password
-  const unlocked = sessionStorage.getItem('crm_unlocked') === 'true';
-  if (unlocked) startLoad();
-  else {
-    document.getElementById('loadingGate').classList.add('hidden');
-    document.getElementById('passwordGate').classList.remove('hidden');
-    document.getElementById('passwordInput').focus();
-  }
-  // Enter key on password
-  document.getElementById('passwordInput').addEventListener('keypress', e => { if (e.key === 'Enter') checkPassword(); });
+  // Auth (Google sign-in) — replaces the old front-end password gate.
+  // Real access control is enforced by Firestore security rules, not this UI.
+  initAuth();
 
   // Nav buttons
   document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1212,21 +1212,60 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-function checkPassword() {
-  const v = document.getElementById('passwordInput').value;
-  if (v === PASSWORD) {
-    sessionStorage.setItem('crm_unlocked', 'true');
-    document.getElementById('passwordGate').classList.add('hidden');
-    startLoad();
-  } else {
-    document.getElementById('passwordError').textContent = 'Incorrect password';
-    document.getElementById('passwordInput').value = '';
-    document.getElementById('passwordInput').focus();
+/* ─── Auth (Firebase / Google sign-in) ───
+   Who's allowed in. This list is for UX (show a friendly "not authorized"
+   instead of a broken app) — the REAL gate is the Firestore security rules.
+   Keep this list in sync with editors() in firestore.rules. */
+const ALLOWED_EMAILS = [
+  'yzgershon@gmail.com',
+  'danielg.sfie@gmail.com'   // Daniel — cofounder
+];
+
+function initAuth() {
+  if (typeof firebase === 'undefined' || !firebase.auth) {
+    console.warn('Firebase Auth SDK not loaded — cannot sign in.');
+    document.getElementById('loadingGate').classList.add('hidden');
+    document.getElementById('authGate').classList.remove('hidden');
+    return;
   }
+  if (!firebase.apps.length) firebase.initializeApp(HARDCODED_FIREBASE);
+  // Stay signed in on this device until explicit sign-out.
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+
+  firebase.auth().onAuthStateChanged(user => {
+    const email = (user && user.email || '').toLowerCase();
+    if (user && ALLOWED_EMAILS.includes(email)) {
+      document.getElementById('authGate').classList.add('hidden');
+      const acct = document.getElementById('setAccountEmail');
+      if (acct) acct.textContent = user.email || '';
+      startLoad();
+    } else if (user) {
+      // Signed in with a Google account that isn't on the allowlist.
+      document.getElementById('loadingGate').classList.add('hidden');
+      document.getElementById('authGate').classList.remove('hidden');
+      document.getElementById('authError').textContent = (user.email || 'That account') + " isn't authorized for this CRM.";
+      firebase.auth().signOut();
+    } else {
+      document.getElementById('loadingGate').classList.add('hidden');
+      document.getElementById('authGate').classList.remove('hidden');
+    }
+  });
+}
+
+function signInWithGoogle() {
+  document.getElementById('authError').textContent = '';
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(err => {
+    document.getElementById('authError').textContent = err && err.message ? err.message : 'Sign-in failed';
+  });
+}
+
+function signOutCrm() {
+  if (firebase && firebase.auth) firebase.auth().signOut().then(() => location.reload());
 }
 
 function startLoad() {
-  document.getElementById('passwordGate').classList.add('hidden');
+  document.getElementById('authGate').classList.add('hidden');
   document.getElementById('loadingGate').classList.remove('hidden');
   // Use hardcoded config (auto-connect like original)
   try {
