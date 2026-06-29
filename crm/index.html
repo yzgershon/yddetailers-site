@@ -172,8 +172,8 @@ a { color: inherit; text-decoration: none; }
 .btn-ghost:hover { background: var(--surface); color: var(--text); }
 .btn-danger { background: transparent; color: var(--red); border-color: rgba(248,113,113,.3); }
 .btn-danger:hover { background: var(--red-soft); border-color: var(--red); }
-.btn-gv { background: #1a73e8; color: #fff; }
-.btn-gv:hover { background: #1557b0; }
+.btn-text { background: var(--green); color: #06281c; font-weight: 600; }
+.btn-text:hover { filter: brightness(1.08); }
 .btn-sm { padding: 5px 10px; font-size: 12px; }
 
 /* KPI cards */
@@ -567,11 +567,6 @@ a { color: inherit; text-decoration: none; }
     </button>
 
     <div class="nav-section-label">System</div>
-    <button class="nav-item" data-tab="followups">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span>Follow-ups</span>
-      <span class="badge alert" id="navFollowupCount">0</span>
-    </button>
     <button class="nav-item" data-tab="settings">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>Settings</span>
@@ -633,7 +628,7 @@ a { color: inherit; text-decoration: none; }
         </div>
 
         <div class="dash-grid">
-          <div class="card">
+          <div class="card" style="grid-column:1/-1">
             <div class="card-head">
               <div>
                 <h3>Upcoming Jobs</h3>
@@ -642,16 +637,6 @@ a { color: inherit; text-decoration: none; }
               <button class="btn btn-ghost btn-sm" onclick="switchTab('calendar')">View calendar →</button>
             </div>
             <div class="card-body tight" id="dashUpcoming"></div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h3>Needs Follow-up</h3>
-                <div class="sub">No service in 60+ days</div>
-              </div>
-              <button class="btn btn-ghost btn-sm" onclick="switchTab('followups')">All →</button>
-            </div>
-            <div class="card-body tight" id="dashFollowups"></div>
           </div>
         </div>
 
@@ -871,7 +856,7 @@ a { color: inherit; text-decoration: none; }
         <div class="page-head">
           <div>
             <h1 class="page-title">Blast Message</h1>
-            <div class="page-sub">Send a personalized text to all clients via Google Voice</div>
+            <div class="page-sub">Send a personalized text to all clients from your phone's Messages app</div>
           </div>
         </div>
 
@@ -936,29 +921,6 @@ a { color: inherit; text-decoration: none; }
         <div id="reviewQueue" style="display:none"></div>
       </section>
 
-      <!-- ===== FOLLOW-UPS ===== -->
-      <section class="page" data-page="followups">
-        <div class="page-head">
-          <div>
-            <h1 class="page-title">Follow-ups</h1>
-            <div class="page-sub">Customers who haven't been serviced in 60+ days</div>
-          </div>
-        </div>
-        <div class="card">
-          <div style="overflow-x:auto">
-            <table class="table">
-              <thead><tr><th>Name</th><th>Status</th><th>Last service</th><th>Days ago</th><th>Phone</th><th></th></tr></thead>
-              <tbody id="followupTbody"></tbody>
-            </table>
-          </div>
-          <div id="followupEmpty" class="empty" style="display:none">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg>
-            <div class="label">All caught up!</div>
-            <div class="hint">No customers need a follow-up right now.</div>
-          </div>
-        </div>
-      </section>
-
       <!-- ===== SETTINGS ===== -->
       <section class="page" data-page="settings">
         <div class="page-head">
@@ -975,7 +937,6 @@ a { color: inherit; text-decoration: none; }
               <div class="field"><label>Business Name</label><input id="setBizName" type="text" placeholder="Milby's Detail Co."></div>
               <div class="field"><label>Your Name</label><input id="setOwner" type="text" placeholder="Milby"></div>
               <div class="field"><label>Google Review Link</label><input id="setReviewLink" type="text" placeholder="https://g.page/r/..."></div>
-              <div class="field"><label>Your Google Voice Number</label><input id="setGvNum" type="text" placeholder="+1XXXXXXXXXX"></div>
               <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
             </div>
           </div>
@@ -1179,11 +1140,6 @@ a { color: inherit; text-decoration: none; }
       Review Requests
     </button>
     <div class="mob-menu-section">System</div>
-    <button class="mob-nav-item" data-tab="followups" onclick="mobNavGo('followups')">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Follow-ups
-      <span class="mob-badge hidden" id="mobFollowupBadge">0</span>
-    </button>
     <button class="mob-nav-item" data-tab="settings" onclick="mobNavGo('settings')">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       Settings
@@ -1403,7 +1359,7 @@ function onDataReady() {
   document.getElementById('app').classList.add('ready');
   if (!_ready) {
     _ready = true;
-    settings = LS.get('crm_settings', { bizName: '', owner: '', reviewLink: '', gvNum: '' });
+    settings = LS.get('crm_settings', { bizName: '', owner: '', reviewLink: '' });
     loadSettings();
     document.getElementById('reviewTemplate').value = LS.get('crm_review_template', "Hey {name}! Thanks again for letting me detail your car — if you have a sec, would you mind leaving a quick Google review? Means the world. {link}");
   }
@@ -1419,15 +1375,9 @@ function refreshAll() {
   renderCalendar();
   renderJobs();
   renderFinancials();
-  renderFollowups();
   renderBlastStats();
   renderReviewClients();
   document.getElementById('navClientCount').textContent = clients.length;
-  const fc = computeFollowups().length;
-  document.getElementById('navFollowupCount').textContent = fc;
-  document.getElementById('navFollowupCount').style.display = fc > 0 ? '' : 'none';
-  const mnBadge = document.getElementById('mobFollowupBadge');
-  if (mnBadge) { mnBadge.textContent = fc; mnBadge.classList.toggle('hidden', fc === 0); }
 }
 
 /* ─── Tab switching ─── */
@@ -1622,27 +1572,6 @@ function renderDashboard() {
       </div>`).join('');
   }
 
-  // Follow-ups widget
-  const fu = document.getElementById('dashFollowups');
-  const followups = computeFollowups().slice(0, 5);
-  if (followups.length === 0) {
-    fu.innerHTML = '<div class="empty"><div class="label">All caught up!</div><div class="hint">Everyone has been serviced recently.</div></div>';
-  } else {
-    fu.innerHTML = followups.map(c => {
-      const last = lastServiceISO(c);
-      const days = last ? daysSince(last) : null;
-      return `
-        <div class="list-row" onclick="openCustomerDrawer('${c.id}')">
-          <div class="avatar">${initials(c.name)}</div>
-          <div class="body">
-            <div class="n">${escapeHTML(c.name)}</div>
-            <div class="m">${last ? days + ' days ago' : 'Never serviced'} · ${fmtPhone(c.phone)}</div>
-          </div>
-          <div class="right"><span class="pill pill-followup">Follow up</span></div>
-        </div>`;
-    }).join('');
-  }
-
   // Recent
   const recent = [...clients].sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 5);
   document.getElementById('dashRecent').innerHTML = recent.length ? recent.map(c => `
@@ -1716,7 +1645,7 @@ function renderClients() {
         <td data-l="Jobs" class="cell-mono">${total}</td>
         <td onclick="event.stopPropagation()">
           <div class="actions">
-            ${c.phone ? `<button class="action-btn" onclick="openGV('${c.phone}')" title="Google Voice"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>`:''}
+            ${c.phone ? `<button class="action-btn" onclick="textClient('${escapeAttr(c.phone)}')" title="Text"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>`:''}
             <button class="action-btn" onclick="openClientModal('${c.id}')" title="Edit"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
             <button class="action-btn danger" onclick="deleteClient('${c.id}')" title="Delete"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
           </div>
@@ -1809,7 +1738,7 @@ function renderDrawer(c) {
           </div>
         </div>
         <div class="actions">
-          ${c.phone ? `<button class="btn btn-gv btn-sm" onclick="openGV('${c.phone}')">Voice</button>` : ''}
+          ${c.phone ? `<button class="btn btn-text btn-sm" onclick="textClient('${escapeAttr(c.phone)}')"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Text</button>` : ''}
           <button class="action-btn" onclick="openClientModal('${c.id}'); closeDrawer();" title="Edit"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
           <button class="action-btn" onclick="closeDrawer()" title="Close"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
@@ -2181,7 +2110,7 @@ function renderQueue(holderId, kind) {
       <div class="queue-actions">
         <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${escapeAttr(c.phone)}');toast('Number copied','success')">Copy Number</button>
         <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(msg)});toast('Message copied','success')">Copy Message</button>
-        <button class="btn btn-gv btn-sm" onclick="openGV('${escapeAttr(c.phone)}')">Open Google Voice ↗</button>
+        <button class="btn btn-text btn-sm" onclick="textClient('${escapeAttr(c.phone)}')">Open in Messages ↗</button>
       </div>
       <div class="queue-actions">
         <button class="btn btn-primary" onclick="advanceQueue('${kind}')">✓ Sent — Next →</button>
@@ -2190,8 +2119,8 @@ function renderQueue(holderId, kind) {
       </div>
       <div class="queue-instructions">
         <ol>
-          <li>Phone is auto-copied. Paste it in Google Voice if needed.</li>
-          <li>Message is also copied — paste in Google Voice and send.</li>
+          <li>Message is auto-copied. Tap <strong>Open in Messages</strong> to start a text to this number.</li>
+          <li>Paste the message and send.</li>
           <li>Click <strong>✓ Sent — Next</strong> to move on.</li>
         </ol>
       </div>
@@ -2234,55 +2163,17 @@ function saveReviewTemplate() {
   toast('Template saved', 'success');
 }
 
-/* ─── FOLLOW-UPS ─── */
-function computeFollowups() {
-  return clients.filter(c => {
-    if (statusOf(c) === 'inactive') return false;
-    const last = lastServiceISO(c);
-    if (!last) {
-      // never serviced — only count if status indicates engaged
-      return statusOf(c) !== 'new';
-    }
-    return daysSince(last) >= 60;
-  });
-}
-function renderFollowups() {
-  const list = computeFollowups();
-  const tbody = document.getElementById('followupTbody');
-  const empty = document.getElementById('followupEmpty');
-  if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = list.map(c => {
-    const last = lastServiceISO(c);
-    const days = last ? daysSince(last) : null;
-    return `<tr onclick="openCustomerDrawer('${c.id}')">
-      <td data-l="Name"><div class="cell-name">${escapeHTML(c.name)}</div></td>
-      <td data-l="Status">${pillStatus(statusOf(c))}</td>
-      <td data-l="Last service" class="cell-muted">${last ? fmtDate(last) : 'Never'}</td>
-      <td data-l="Days ago" class="cell-mono" style="color:var(--red);font-weight:600">${days != null ? days+'d' : '—'}</td>
-      <td data-l="Phone" class="cell-mono">${fmtPhone(c.phone)}</td>
-      <td onclick="event.stopPropagation()">
-        <div class="actions">
-          ${c.phone ? `<button class="action-btn" onclick="openGV('${c.phone}')"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>` : ''}
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
 /* ─── SETTINGS ─── */
 function loadSettings() {
   document.getElementById('setBizName').value = settings.bizName || '';
   document.getElementById('setOwner').value = settings.owner || '';
   document.getElementById('setReviewLink').value = settings.reviewLink || '';
-  document.getElementById('setGvNum').value = settings.gvNum || '';
 }
 function saveSettings() {
   settings = {
     bizName: document.getElementById('setBizName').value.trim(),
     owner: document.getElementById('setOwner').value.trim(),
-    reviewLink: document.getElementById('setReviewLink').value.trim(),
-    gvNum: document.getElementById('setGvNum').value.trim()
+    reviewLink: document.getElementById('setReviewLink').value.trim()
   };
   LS.set('crm_settings', settings);
   toast('Settings saved', 'success');
@@ -2388,10 +2279,11 @@ function renderGlobalSearch() {
 /* ─── Misc helpers ─── */
 function escapeHTML(s) { return (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 function escapeAttr(s) { return escapeHTML(s).replace(/`/g,'&#96;'); }
-function openGV(phone) {
-  navigator.clipboard?.writeText(phone).catch(()=>{});
-  window.open('https://voice.google.com/u/0/messages', '_blank');
-  toast('📋 Number copied — paste in Google Voice', 'success');
+function textClient(phone) {
+  const num = (phone || '').replace(/[^\d+]/g, '');
+  if (!num) { toast('No phone number on file', 'error'); return; }
+  // Opens the default messaging app (Samsung Messages / iMessage) with a new chat to this number
+  window.location.href = 'sms:' + num;
 }
 function saveConfig() {
   // not used (auto-connect path); kept for future
