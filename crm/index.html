@@ -547,6 +547,10 @@ a { color: inherit; text-decoration: none; }
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <span>Calendar</span>
     </button>
+    <button class="nav-item" data-tab="jobs">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L20 6"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Previous Jobs</span>
+    </button>
     <button class="nav-item" data-tab="financials">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       <span>Financials</span>
@@ -754,6 +758,58 @@ a { color: inherit; text-decoration: none; }
         <div class="card">
           <div class="card-head"><div><h3>Upcoming Jobs</h3><div class="sub">Next 5 scheduled bookings</div></div></div>
           <div class="card-body tight" id="calUpcoming"></div>
+        </div>
+      </section>
+
+      <!-- ===== PREVIOUS JOBS ===== -->
+      <section class="page" data-page="jobs">
+        <div class="page-head">
+          <div>
+            <h1 class="page-title">Previous Jobs</h1>
+            <div class="page-sub">Every job, newest first. Click any row to edit it or add a tip.</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" onclick="openBookingModal()">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Booking
+            </button>
+          </div>
+        </div>
+
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi green"><div class="kpi-label">Jobs Shown</div><div class="kpi-value green" id="jobsKpiCount">0</div></div>
+          <div class="kpi amber"><div class="kpi-label">Total Earned</div><div class="kpi-value amber" id="jobsKpiTotal">$0</div><div class="kpi-sub">Price + tips</div></div>
+          <div class="kpi accent"><div class="kpi-label">Tips Collected</div><div class="kpi-value accent" id="jobsKpiTips">$0</div></div>
+        </div>
+
+        <div class="card">
+          <div class="filter-bar">
+            <input type="search" id="jobSearch" placeholder="Search client, service, vehicle…" oninput="renderJobs()">
+            <select id="jobStatusFilter" onchange="renderJobs()">
+              <option value="">All statuses</option>
+              <option value="completed">Completed</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="noshow">No-show</option>
+            </select>
+            <select id="jobPayFilter" onchange="renderJobs()">
+              <option value="">Any payment</option>
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+            <span class="filter-count" id="jobCount"></span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="table">
+              <thead><tr><th>Date</th><th>Client</th><th>Vehicle</th><th>Service</th><th>Status</th><th>Payment</th><th>Price</th><th>Tip</th><th>Total</th></tr></thead>
+              <tbody id="jobsTbody"></tbody>
+            </table>
+          </div>
+          <div id="jobsEmpty" class="empty" style="display:none">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L20 6"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <div class="label">No jobs match these filters</div>
+            <div class="hint">Try clearing filters or add a booking.</div>
+          </div>
         </div>
       </section>
 
@@ -1024,9 +1080,10 @@ a { color: inherit; text-decoration: none; }
         <div class="field"><label>Vehicle Type</label><select id="bkVehType"><option>Sedan</option><option>SUV</option><option>Truck</option></select></div>
         <div class="field"><label>Make &amp; Model</label><input id="bkVehName" type="text" placeholder="Honda CRV"></div>
       </div>
-      <div class="field-row">
+      <div class="field-row cols-3">
         <div class="field"><label>Service</label><select id="bkService"><option>Exterior Detail</option><option>Interior Reset</option><option>Signature Full Detail</option><option>Other</option></select></div>
         <div class="field"><label>Price ($) *</label><input id="bkPrice" type="number" step="1" min="0"></div>
+        <div class="field"><label>Tip ($)</label><input id="bkTip" type="number" step="1" min="0" placeholder="0"></div>
       </div>
       <div class="field-row cols-3">
         <div class="field"><label>Status</label><select id="bkStatus"><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="noshow">No-show</option></select></div>
@@ -1103,6 +1160,10 @@ a { color: inherit; text-decoration: none; }
     <button class="mob-nav-item" data-tab="calendar" onclick="mobNavGo('calendar')">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Calendar
+    </button>
+    <button class="mob-nav-item" data-tab="jobs" onclick="mobNavGo('jobs')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L20 6"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Previous Jobs
     </button>
     <button class="mob-nav-item" data-tab="financials" onclick="mobNavGo('financials')">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -1356,6 +1417,7 @@ function refreshAll() {
   renderDashboard();
   renderClients();
   renderCalendar();
+  renderJobs();
   renderFinancials();
   renderFollowups();
   renderBlastStats();
@@ -1410,6 +1472,8 @@ function daysSince(iso) { if (!iso) return null; return Math.floor((Date.now() -
 function jobsFor(clientId, clientName) {
   return bookings.filter(b => b.clientId === clientId || b.name === clientName).sort((a,b) => (b.date||'').localeCompare(a.date||''));
 }
+function jobTip(b) { return +b.tip || 0; }
+function jobTotal(b) { return (+b.price || 0) + jobTip(b); }
 function lastServiceISO(c) {
   const js = jobsFor(c.id, c.name).filter(b => b.status === 'completed' || (!b.status && b.date && b.date <= todayISO()));
   return js[0]?.date || null;
@@ -1526,8 +1590,8 @@ function renderDashboard() {
   const ym = now.toISOString().slice(0, 7);
   const monthBookings = bookings.filter(b => (b.date || '').startsWith(ym));
   const upcoming = bookings.filter(b => (b.date || '') >= todayISO() && b.status !== 'cancelled').sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
-  const monthRevenue = monthBookings.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + (+b.price || 0), 0);
-  const allRevenue = bookings.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + (+b.price || 0), 0);
+  const monthRevenue = monthBookings.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + jobTotal(b), 0);
+  const allRevenue = bookings.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + jobTotal(b), 0);
   const newThisMonth = clients.filter(c => c.createdAt && new Date(c.createdAt).toISOString().slice(0,7) === ym).length;
 
   document.getElementById('kpiCustomers').textContent = clients.length;
@@ -1731,7 +1795,7 @@ function closeDrawer() { document.getElementById('customerDrawer').classList.rem
 
 function renderDrawer(c) {
   const js = jobsFor(c.id, c.name);
-  const totalSpent = js.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + (+b.price || 0), 0);
+  const totalSpent = js.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + jobTotal(b), 0);
   const last = lastServiceISO(c);
   const panel = document.getElementById('drawerPanel');
   panel.innerHTML = `
@@ -1809,10 +1873,49 @@ function jobCardHTML(b) {
       <div class="row2">
         <span>${escapeHTML(b.vehName || '')} · ${escapeHTML(b.vehType || '')}</span>
         ${b.address ? '<span>· '+escapeHTML(b.address)+'</span>' : ''}
-        <span class="price">${fmtMoney(b.price)}</span>
+        <span class="price">${fmtMoney(jobTotal(b))}${jobTip(b) ? ` <span style="font-size:11px;color:var(--green);font-weight:500">(${fmtMoney(b.price)} + ${fmtMoney(jobTip(b))} tip)</span>` : ''}</span>
       </div>
       ${b.notes ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);color:var(--text-2);font-size:12.5px">${escapeHTML(b.notes)}</div>` : ''}
     </div>`;
+}
+
+/* ─── PREVIOUS JOBS ─── */
+function renderJobs() {
+  const q = (document.getElementById('jobSearch')?.value || '').toLowerCase().trim();
+  const sf = document.getElementById('jobStatusFilter')?.value || '';
+  const pf = document.getElementById('jobPayFilter')?.value || '';
+  let rows = bookings.slice().sort((a,b) =>
+    (b.date||'').localeCompare(a.date||'') || (b.time||'').localeCompare(a.time||''));
+  if (sf) rows = rows.filter(b => (b.status || 'scheduled') === sf);
+  if (pf) rows = rows.filter(b => (b.payment || 'unpaid') === pf);
+  if (q) rows = rows.filter(b =>
+    `${b.name||''} ${b.service||''} ${b.vehName||''} ${b.vehType||''}`.toLowerCase().includes(q));
+
+  const total = rows.reduce((s,b) => s + jobTotal(b), 0);
+  const tips = rows.reduce((s,b) => s + jobTip(b), 0);
+  document.getElementById('jobsKpiCount').textContent = rows.length;
+  document.getElementById('jobsKpiTotal').textContent = fmtMoney(total);
+  document.getElementById('jobsKpiTips').textContent = fmtMoney(tips);
+  document.getElementById('jobCount').textContent = rows.length + ' job' + (rows.length === 1 ? '' : 's');
+
+  const tbody = document.getElementById('jobsTbody');
+  const empty = document.getElementById('jobsEmpty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(b => `
+    <tr onclick="openBookingModal('${b.id}')">
+      <td data-l="Date" class="cell-mono">${fmtDate(b.date)}</td>
+      <td data-l="Client" class="cell-name">${escapeHTML(b.name || '—')}</td>
+      <td data-l="Vehicle" class="cell-tag">${escapeHTML(b.vehName || b.vehType || '—')}</td>
+      <td data-l="Service" class="cell-tag">${escapeHTML(b.service || '—')}</td>
+      <td data-l="Status">${pillJob(b.status || 'scheduled')}</td>
+      <td data-l="Payment">${b.payment === 'paid'
+        ? '<span class="pill pill-paid"><span class="dot"></span>Paid</span>'
+        : '<span class="pill pill-unpaid"><span class="dot"></span>Unpaid</span>'}</td>
+      <td data-l="Price" class="cell-mono">${fmtMoney(b.price)}</td>
+      <td data-l="Tip" class="cell-mono">${jobTip(b) ? `<span style="color:var(--green)">${fmtMoney(jobTip(b))}</span>` : '—'}</td>
+      <td data-l="Total" class="cell-mono" style="font-weight:600;color:var(--accent)">${fmtMoney(jobTotal(b))}</td>
+    </tr>`).join('');
 }
 
 async function saveDrawerNotes(id) {
@@ -1894,7 +1997,7 @@ function selectDay(iso) { selectedDay = iso; renderCalendar(); }
 function openBookingModal(id) {
   editingBookingId = id || null;
   document.getElementById('bookingModalTitle').textContent = id ? 'Edit Booking' : 'Add Booking';
-  const b = id ? bookings.find(x => x.id === id) : { name:'', phone:'', email:'', date: selectedDay || todayISO(), time:'09:00', vehType:'Sedan', vehName:'', service:'Exterior Detail', price:'', address:'', notes:'', status:'scheduled', payment:'unpaid' };
+  const b = id ? bookings.find(x => x.id === id) : { name:'', phone:'', email:'', date: selectedDay || todayISO(), time:'09:00', vehType:'Sedan', vehName:'', service:'Exterior Detail', price:'', tip:'', address:'', notes:'', status:'scheduled', payment:'unpaid' };
   document.getElementById('bkName').value = b.name || '';
   document.getElementById('bkPhone').value = b.phone || '';
   document.getElementById('bkEmail').value = b.email || '';
@@ -1904,6 +2007,7 @@ function openBookingModal(id) {
   document.getElementById('bkVehName').value = b.vehName || '';
   document.getElementById('bkService').value = b.service || 'Exterior Detail';
   document.getElementById('bkPrice').value = b.price || '';
+  document.getElementById('bkTip').value = b.tip || '';
   document.getElementById('bkAddress').value = b.address || '';
   document.getElementById('bkNotes').value = b.notes || '';
   document.getElementById('bkStatus').value = b.status || 'scheduled';
@@ -1938,7 +2042,7 @@ async function saveBooking() {
   // Try to link to existing client
   const matched = clients.find(c => c.name.toLowerCase() === name.toLowerCase());
   const data = {
-    name, date, time, price: +price,
+    name, date, time, price: +price, tip: +document.getElementById('bkTip').value || 0,
     phone: document.getElementById('bkPhone').value.trim() || matched?.phone || '',
     email: document.getElementById('bkEmail').value.trim() || matched?.email || '',
     vehType: document.getElementById('bkVehType').value,
@@ -1960,7 +2064,7 @@ async function saveBooking() {
 function changeFinMonth(d) { finMonth.setMonth(finMonth.getMonth() + d); renderFinancials(); }
 function renderFinancials() {
   // All-time
-  const allRev = bookings.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + (+b.price || 0), 0);
+  const allRev = bookings.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + jobTotal(b), 0);
   const allExp = expenses.reduce((s,e) => s + (+e.amount || 0), 0);
   document.getElementById('finRev').textContent = fmtMoney(allRev);
   document.getElementById('finRevSub').textContent = bookings.length + ' jobs';
@@ -1973,7 +2077,7 @@ function renderFinancials() {
   document.getElementById('finMonthLabel').textContent = finMonth.toLocaleDateString('en-US',{month:'long',year:'numeric'});
   const monthJobs = bookings.filter(b => (b.date||'').startsWith(ym));
   const monthExp = expenses.filter(e => (e.date||'').startsWith(ym));
-  const mRev = monthJobs.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + (+b.price || 0), 0);
+  const mRev = monthJobs.filter(b => b.status === 'completed' || !b.status).reduce((s,b) => s + jobTotal(b), 0);
   const mExp = monthExp.reduce((s,e) => s + (+e.amount || 0), 0);
   document.getElementById('finMonthRev').textContent = fmtMoney(mRev);
   document.getElementById('finMonthExp').textContent = fmtMoney(mExp);
@@ -1982,8 +2086,8 @@ function renderFinancials() {
   document.getElementById('finJobs').innerHTML = monthJobs.length ? monthJobs.map(b => `
     <div class="list-row">
       <div class="avatar">${initials(b.name)}</div>
-      <div class="body"><div class="n">${escapeHTML(b.name)} ${pillJob(b.status||'scheduled')}</div><div class="m">${escapeHTML(b.service||'')} · ${fmtDate(b.date)}</div></div>
-      <div class="right"><div class="v">${fmtMoney(b.price)}</div></div>
+      <div class="body"><div class="n">${escapeHTML(b.name)} ${pillJob(b.status||'scheduled')}</div><div class="m">${escapeHTML(b.service||'')} · ${fmtDate(b.date)}${jobTip(b) ? ' · +' + fmtMoney(jobTip(b)) + ' tip' : ''}</div></div>
+      <div class="right"><div class="v">${fmtMoney(jobTotal(b))}</div></div>
     </div>`).join('') : '<div class="empty"><div class="label">No jobs this month</div></div>';
 
   document.getElementById('finExpList').innerHTML = monthExp.length ? monthExp.map(e => `
