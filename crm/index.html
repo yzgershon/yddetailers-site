@@ -1312,6 +1312,7 @@ function initFirebase(config) {
     db.collection('bookings').onSnapshot(snap => {
       bookings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       onDataReady();
+      scheduleBusySlotSync();
     });
 
     db.collection('expenses').onSnapshot(snap => {
@@ -1473,6 +1474,49 @@ async function saveBookingDoc(data, id) {
 async function deleteBookingDoc(id) {
   if (useFirebase) await db.collection('bookings').doc(id).delete();
   else { bookings = bookings.filter(b => b.id !== id); persistLocal(); refreshAll(); }
+}
+
+/* ─── busySlots mirror ───
+   busySlots is the only collection the public booking page can read. It holds
+   {date, time, duration, bookingId} — no customer data — so the site can grey
+   out taken times while the bookings collection stays locked down.
+   Reconciled here on every bookings change, so cancels, deletes, edits, and
+   pre-existing bookings all stay accurate with no manual step. */
+let _busySyncTimer = null;
+function scheduleBusySlotSync() {
+  if (!useFirebase) return;
+  clearTimeout(_busySyncTimer);
+  _busySyncTimer = setTimeout(() => syncBusySlots().catch(e => console.warn('busySlots sync failed:', e)), 1500);
+}
+async function syncBusySlots() {
+  if (!useFirebase) return;
+  const today = todayISO();
+  const want = new Map(); // bookingId -> slot the mirror should contain
+  bookings.forEach(b => {
+    if (b.date && b.time && b.date >= today && b.status !== 'cancelled' && b.status !== 'noshow')
+      want.set(b.id, { date: b.date, time: String(b.time).slice(0, 5), duration: Number(b.duration) || 2 });
+  });
+  const snap = await db.collection('busySlots').get();
+  const batch = db.batch();
+  let writes = 0;
+  const have = new Set();
+  snap.docs.forEach(d => {
+    const s = d.data();
+    const w = s.bookingId ? want.get(s.bookingId) : null;
+    const matches = w && w.date === s.date && String(s.time).slice(0, 5) === w.time && (Number(s.duration) || 0) === w.duration;
+    if (matches && !have.has(s.bookingId)) {
+      have.add(s.bookingId);
+    } else {
+      batch.delete(d.ref); writes++; // stale, orphaned, past, or duplicate slot
+    }
+  });
+  want.forEach((w, bookingId) => {
+    if (!have.has(bookingId)) {
+      batch.set(db.collection('busySlots').doc(), { ...w, bookingId, createdAt: new Date().toISOString() });
+      writes++;
+    }
+  });
+  if (writes) await batch.commit();
 }
 
 /* ─── Auto-add a client whenever a real booking comes in ───

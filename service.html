@@ -19,6 +19,14 @@ fbq('track', 'PageView');
 src="https://www.facebook.com/tr?id=1246148674096033&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VSRM63PVL6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-VSRM63PVL6');
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Service — YD Detailers</title>
 <meta name="description" content="Premium mobile car detailing in the Greater Boston area. Choose your package and book online.">
@@ -270,7 +278,7 @@ function render(){
   document.getElementById('priceLbl').textContent = n
     ? `${veh} + ${n} add-on${n > 1 ? 's' : ''}`
     : 'Starting price · ' + veh;
-  let href = `booking.html.html?service=${id}&vehicle=${veh}`;
+  let href = `booking.html?service=${id}&vehicle=${veh}`;
   if (n) href += `&addons=${[...selectedAddons].join(',')}`;
   document.getElementById('bookBtn').href = href;
 }
