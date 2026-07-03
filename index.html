@@ -777,6 +777,9 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
 .yk-story-img{position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:6px;}
 .yk-story-img img{width:100%;height:100%;object-fit:cover;transform:scale(1.05);transition:transform 1.2s;}
 .yk-story-img:hover img{transform:scale(1.12);}
+/* before/after foam fade — the clean shot sits on top at opacity 0 */
+.yk-story-img .story-after{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity 1.2s ease,transform 1.2s;}
+.yk-story-img.show-after .story-after{opacity:1;}
 .yk-story-img::before{content:'';position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.55));}
 .yk-story-img-tag{position:absolute;left:22px;bottom:22px;z-index:3;font-family:var(--serif);font-style:italic;font-size:22px;color:#fff;}
 .yk-story-img-tag::before{content:'';display:block;width:36px;height:1px;background:var(--blue);margin-bottom:10px;}
@@ -1144,6 +1147,7 @@ h1,h2,h3,.hero h1,.story-h2,.cta-h2,.why-h2,.testi-h2,.svc-h2{font-family:var(--
 <div class="yk-story reveal">
   <div class="yk-story-img">
     <img src="assets/story-m3-foam.webp" alt="Blue BMW M3 covered in snow foam during a YD Detailers mobile exterior wash in Newton MA" loading="lazy">
+    <img class="story-after" src="assets/story-m3-clean.webp" alt="The same BMW M3 spotless and shining after the detail" loading="lazy">
     <div class="yk-story-img-tag">Yishai &amp; Dan,<br>at work.</div>
   </div>
   <div>
@@ -1698,6 +1702,38 @@ function submitQuote(){
   document.getElementById('quoteFormWrap').classList.add('qhide');
   document.getElementById('quoteSuccess').classList.add('qshow');
 }
+
+// Our Story before/after foam fade: in view -> 1.5s on the foamed shot ->
+// slow fade to the clean shot -> 2s hold -> fade back, looping while visible.
+// Activates only once the clean image actually loads, so it is a no-op until
+// assets/story-m3-clean.webp exists.
+(function(){
+  const wrap = document.querySelector('.yk-story-img');
+  const after = wrap && wrap.querySelector('.story-after');
+  if (!after) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let timer = null, inView = false;
+  function loop(){
+    if (!inView) return;
+    timer = setTimeout(() => {           // 1.5s on the before shot
+      wrap.classList.add('show-after');  // 1.2s fade to clean
+      timer = setTimeout(() => {         // 2s hold after the fade lands
+        wrap.classList.remove('show-after'); // 1.2s fade back
+        timer = setTimeout(loop, 1200);
+      }, 1200 + 2000);
+    }, 1500);
+  }
+  function arm(){
+    new IntersectionObserver(entries => entries.forEach(e => {
+      inView = e.isIntersecting;
+      clearTimeout(timer);
+      if (inView) loop();
+      else wrap.classList.remove('show-after');
+    }), {threshold: 0.35}).observe(wrap);
+  }
+  if (after.complete && after.naturalWidth > 0) arm();
+  else after.addEventListener('load', arm, {once: true});
+})();
 
 // Openings-left count rotates 3 -> 2 -> 4 each week (flips Monday, same for every visitor)
 (function(){
