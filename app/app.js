@@ -7,7 +7,7 @@
 const FB_CONFIG = { apiKey:"AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E", authDomain:"yddetailers.firebaseapp.com", projectId:"yddetailers" };
 let db = null;
 
-const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', _unsub:[] };
+const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, _unsub:[], photoKeys:new Set() };
 
 const SERVICES = [
   {id:'exterior', name:'Exterior Detail', price:130},
@@ -205,7 +205,7 @@ function renderAll(){ renderJobs(); renderMoney(); renderClients(); renderPhotos
 
 function topbar(eyebrow,title){
   return `<header class="topbar" data-anim style="--i:0"><div><div class="eyebrow">${esc(eyebrow)}</div><h1 class="screen-title">${esc(title)}<span class="dot">.</span></h1></div>
-    <button class="avatar ${App.source==='live'?'live':''}" onclick="openSettings()" aria-label="Settings">YD<span class="conn-dot"></span></button></header>`;
+    <button class="avatar ${App.source==='live'?'live':''}" onclick="openSettings()" aria-label="Settings"><img src="logo.png" alt="YD Detailers"><span class="conn-dot"></span></button></header>`;
 }
 function pill(s){ const [cls,label]=STMETA[s]; return `<span class="pill ${cls}"><span class="d"></span>${label}</span>`; }
 
@@ -224,12 +224,14 @@ function jobCard(j,i,mini){
   </button>`;
 }
 
-function heroCard(j){
+function heroCard(j, mode){
   const s=statusOf(j);
-  const live = s==='progress';
-  const elapsed = live ? 'Started '+Math.max(1,Math.round((Date.now()-j.startedAt)/60000))+' min ago' : fmtTime(j.time);
-  const badge = live ? `<span class="live-pill"><span class="rec"></span>In progress</span>` : `<span class="live-pill"><span class="rec"></span>Next up</span>`;
-  const cta = live ? 'Continue' : 'Start job';
+  const recent = mode==='recent';
+  const live = !recent && s==='progress';
+  let badge, elapsed, cta;
+  if(recent){ badge=`<span class="live-pill" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.88)"><span class="rec" style="animation:none;background:#7fd6a6"></span>Last detail</span>`; elapsed=fmtDateShort(j.date); cta='View'; }
+  else if(live){ badge=`<span class="live-pill"><span class="rec"></span>In progress</span>`; elapsed='Started '+Math.max(1,Math.round((Date.now()-j.startedAt)/60000))+' min ago'; cta='Continue'; }
+  else { badge=`<span class="live-pill"><span class="rec"></span>Next up</span>`; elapsed=fmtTime(j.time); cta='Start job'; }
   return `<div class="hero-job" data-anim style="--i:3" onclick="openJob('${j.id}')">
     <div class="glow"></div><div class="sweep"></div>
     <div class="car-watermark">${IC.carLine}</div>
@@ -252,6 +254,9 @@ function renderJobs(){
   if(App.jobView==='week'){ el.innerHTML = h + weekView(); return; }
 
   const today = App.jobs.filter(j=>j.date===T && statusOf(j)!=='cancelled').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+
+  if(today.length===0){ el.innerHTML = h + recentDayView(); return; }
+
   const inprog = today.find(j=>statusOf(j)==='progress');
   const upcoming = today.filter(j=>statusOf(j)==='upcoming');
   const done = today.filter(j=>['paid','collect'].includes(statusOf(j)));
@@ -259,7 +264,6 @@ function renderJobs(){
   const booked = sum(today.map(j=>j.price));
   const nextUp = upcoming[0];
 
-  // chips
   h += `<div class="chips" data-anim style="--i:1">
     <div class="chip"><span class="ic tint-o">${IC.cal}</span><div><div class="k">${today.length}</div><div class="l">jobs</div></div></div>
     <div class="chip"><span class="ic tint-g">${IC.dollar}</span><div><div class="k">${money(booked)}</div><div class="l">booked</div></div></div>
@@ -267,13 +271,8 @@ function renderJobs(){
     <div class="chip"><span class="ic tint-b">${IC.clock}</span><div><div class="k">${nextUp?time12(nextUp.time).t+time12(nextUp.time).ap.toLowerCase()[0]:'—'}</div><div class="l">next up</div></div></div>
   </div>`;
 
-  if(today.length===0){
-    h += emptyState(IC.cal,'No jobs today','Nothing on the schedule yet. Add a job or check the week.','Add a job','onFab()');
-    el.innerHTML=h; return;
-  }
-
-  const hero = inprog || nextUp;
-  if(hero) h += heroCard(hero);
+  const hero = inprog || nextUp || done[0];
+  if(hero) h += heroCard(hero, (!inprog && !nextUp) ? 'recent' : null);
 
   const rest = upcoming.filter(j=>!hero || j.id!==hero.id);
   if(rest.length){
@@ -285,6 +284,30 @@ function renderJobs(){
     done.forEach((j,i)=> h+=jobCard(j,10+i,true));
   }
   el.innerHTML=h;
+}
+
+function recentDayView(){
+  const T=todayISO(); const ws=weekStart(T);
+  const recent = App.jobs.filter(j=>j.status==='completed' && j.date<=T).sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||''))).slice(0,6);
+  const weekDone = App.jobs.filter(j=>j.status==='completed' && inRange(j.date,ws,addDays(ws,6)));
+  const weekEarn = sum(weekDone.map(j=>j.price));
+  const collectN = App.jobs.filter(j=>statusOf(j)==='collect').length;
+  let h = `<div class="chips" data-anim style="--i:1">
+    <div class="chip"><span class="ic tint-o">${IC.cal}</span><div><div class="k">0</div><div class="l">today</div></div></div>
+    <div class="chip"><span class="ic tint-g">${IC.dollar}</span><div><div class="k">${money(weekEarn)}</div><div class="l">this week</div></div></div>
+    <div class="chip"><span class="ic tint-b">${IC.check}</span><div><div class="k">${weekDone.length}</div><div class="l">jobs this wk</div></div></div>
+    <div class="chip"><span class="ic tint-c">${IC.alert}</span><div><div class="k">${collectN}</div><div class="l">to collect</div></div></div>
+  </div>`;
+  h += `<div class="today-note" data-anim style="--i:2"><span class="ic">${IC.cal}</span><div><div class="tn-h">No details scheduled today</div><div class="tn-s">Enjoy the day off. Here's your recent work.</div></div></div>`;
+  if(recent[0]) h += heroCard(recent[0],'recent');
+  if(recent.length>1){
+    h += `<div class="section-label" data-anim style="--i:4"><h3>Recent work</h3><span class="more">last ${recent.length-1}</span></div>`;
+    recent.slice(1).forEach((j,i)=> h+=jobCard(j,5+i,true));
+  }
+  if(recent.length===0){
+    h += emptyState(IC.cal,'No jobs yet','Add your first job with the + button, or connect your live CRM in Settings.','Add a job','onFab()');
+  }
+  return h;
 }
 
 function weekView(){
@@ -308,52 +331,70 @@ function emptyState(icon,title,msg,btn,action){
   return `<div class="empty" data-anim style="--i:2"><div class="eic">${icon}</div><h4>${esc(title)}</h4><p>${esc(msg)}</p>${btn?`<button class="btn-sm" onclick="${action}">${IC.plus}${esc(btn)}</button>`:''}</div>`;
 }
 
-function moneyStats(period){
-  const T=todayISO(); const ws=weekStart(T);
+function periodWindow(period, offset){
+  const T=todayISO();
+  if(period==='week'){ const start=addDays(weekStart(T), offset*7); return {from:start, to:addDays(start,6)}; }
+  const d=new Date(T+'T00:00:00'); const y=d.getFullYear(), m=d.getMonth();
+  return { from:isoOf(new Date(y, m+offset, 1)), to:isoOf(new Date(y, m+offset+1, 0)) };
+}
+function periodLabel(period, offset){
+  if(offset===0) return period==='week'?'This week':'This month';
+  if(offset===-1) return period==='week'?'Last week':'Last month';
+  const w=periodWindow(period,offset);
+  if(period==='week') return fmtDateShort(w.from)+' – '+dayNum(w.to);
+  const d=new Date(w.from+'T00:00:00'); return MON[d.getMonth()]+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():'');
+}
+function moneyStats(period, offset){
   const completed = App.jobs.filter(j=>j.status==='completed');
-  let set, prevSet;
-  if(period==='week'){ set=completed.filter(j=>inRange(j.date,ws,addDays(ws,6))); prevSet=completed.filter(j=>inRange(j.date,addDays(ws,-7),addDays(ws,-1))); }
-  else { const from=addDays(T,-29), pf=addDays(T,-59), pt=addDays(T,-30); set=completed.filter(j=>inRange(j.date,from,T)); prevSet=completed.filter(j=>inRange(j.date,pf,pt)); }
+  const w=periodWindow(period,offset), pw=periodWindow(period,offset-1);
+  const set=completed.filter(j=>inRange(j.date,w.from,w.to));
+  const prevSet=completed.filter(j=>inRange(j.date,pw.from,pw.to));
   const rev=sum(set.map(j=>j.price)); const prev=sum(prevSet.map(j=>j.price));
   const tips=sum(set.map(j=>j.tip||0)); const jobs=set.length; const avg=jobs?Math.round(rev/jobs):0;
   const unpaidSet=App.jobs.filter(j=>j.status==='completed' && j.paid===false); const unpaid=sum(unpaidSet.map(j=>j.price));
   const delta = prev>0? Math.round((rev-prev)/prev*100) : (rev>0?100:0);
-  return {rev,tips,jobs,avg,unpaid,unpaidN:unpaidSet.length,delta};
+  return {rev,tips,jobs,avg,unpaid,unpaidN:unpaidSet.length,delta,set};
 }
-function chartData(period){
-  const T=todayISO(); const ws=weekStart(T); const completed=App.jobs.filter(j=>j.status==='completed');
+function chartData(period, offset){
+  const T=todayISO(); const completed=App.jobs.filter(j=>j.status==='completed'); const w=periodWindow(period,offset);
   if(period==='week'){ const labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; const vals=[0,0,0,0,0,0,0];
-    completed.forEach(j=>{ if(inRange(j.date,ws,addDays(ws,6))) vals[dowMon(j.date)]+=j.price; });
-    return {labels,vals,todayIdx:dowMon(T),title:'This week · earnings'};
-  } else { const labels=[],vals=[];
-    for(let w=3;w>=0;w--){ const s=addDays(ws,-7*w); let v=0; completed.forEach(j=>{ if(inRange(j.date,s,addDays(s,6))) v+=j.price; }); labels.push(w===0?'Now':'W'+(4-w)); vals.push(v); }
-    return {labels,vals,todayIdx:3,title:'This month · by week'};
+    completed.forEach(j=>{ if(inRange(j.date,w.from,w.to)) vals[dowMon(j.date)]+=j.price; });
+    const todayIdx = inRange(T,w.from,w.to)? dowMon(T) : -1;
+    return {labels,vals,todayIdx};
+  } else { const labels=[],vals=[]; let s=w.from, i=1, todayIdx=-1;
+    while(s<=w.to){ const e=addDays(s,6)>w.to?w.to:addDays(s,6); let v=0; completed.forEach(j=>{ if(inRange(j.date,s,e)) v+=j.price; }); if(inRange(T,s,e)) todayIdx=labels.length; labels.push('W'+i); vals.push(v); s=addDays(e,1); i++; }
+    return {labels,vals,todayIdx};
   }
 }
 function renderMoney(){
-  const el=document.getElementById('s-money'); const p=App.moneyPeriod; const st=moneyStats(p);
+  const el=document.getElementById('s-money'); const p=App.moneyPeriod; const off=App.moneyOffset; const st=moneyStats(p,off);
   let h = topbar('Earnings','Money');
   h += `<div class="seg" data-anim style="--i:1" id="moneyseg"><span class="glider" style="transform:translateX(${p==='month'?'100%':'0'})"></span>
-    <button class="${p==='week'?'on':''}" onclick="setMoneyPeriod('week')">This Week</button>
-    <button class="${p==='month'?'on':''}" onclick="setMoneyPeriod('month')">This Month</button></div>`;
+    <button class="${p==='week'?'on':''}" onclick="setMoneyPeriod('week')">Weekly</button>
+    <button class="${p==='month'?'on':''}" onclick="setMoneyPeriod('month')">Monthly</button></div>`;
+  h += `<div class="period-nav" data-anim style="--i:1">
+    <button onclick="stepPeriod(-1)" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <span class="pl">${periodLabel(p,off)}</span>
+    <button onclick="stepPeriod(1)" ${off>=0?'disabled':''} aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>`;
   h += `<div class="kpi-grid" data-anim style="--i:2">
     <div class="kpi span2"><div><div class="ktop"><span class="kic tint-o">${IC.dollar}</span><span class="kl">Revenue</span></div><div class="kv big kv-o">${money(st.rev)}</div></div>
-      <div class="ksub up" style="text-align:right"><svg class="up-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 15l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg> ${st.delta>=0?'+':''}${st.delta}%<br><span style="color:var(--muted);font-weight:700">vs last ${p==='week'?'week':'month'}</span></div></div>
+      <div class="ksub up" style="text-align:right"><svg class="up-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 15l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg> ${st.delta>=0?'+':''}${st.delta}%<br><span style="color:var(--muted);font-weight:700">vs prev ${p==='week'?'week':'month'}</span></div></div>
     <div class="kpi"><div class="ktop"><span class="kic tint-b">${IC.check}</span><span class="kl">Jobs done</span></div><div class="kv">${st.jobs}</div></div>
     <div class="kpi"><div class="ktop"><span class="kic tint-g">${IC.heart}</span><span class="kl">Tips</span></div><div class="kv kv-g">${money(st.tips)}</div></div>
     <div class="kpi"><div class="ktop"><span class="kic tint-p">${IC.chart}</span><span class="kl">Avg ticket</span></div><div class="kv kv-p">${money(st.avg)}</div></div>
     <div class="kpi unpaid"><div class="ktop"><span class="kic tint-c">${IC.alert}</span><span class="kl">Unpaid</span></div><div class="kv kv-c">${money(st.unpaid)}</div><div class="ksub" style="color:var(--coral)">${st.unpaidN} job${st.unpaidN!==1?'s':''} to collect</div></div>
   </div>`;
-  const cd=chartData(p); const max=Math.max(1,...cd.vals);
+  const cd=chartData(p,off); const max=Math.max(1,...cd.vals);
   let bars='';
   cd.labels.forEach((lb,idx)=>{ const v=cd.vals[idx]; const hh=v===0?4:Math.round(v/max*100); const isT=idx===cd.todayIdx;
     const cls=v===0?'bar zero':(isT?'bar today':'bar');
     bars+=`<div class="bar-col ${isT?'is-today':''}"><div class="bar-track"><div class="${cls}" style="height:${hh}%"><span class="bar-val">$${v}</span></div></div><span class="bar-lbl">${lb}</span></div>`; });
-  h += `<div class="chart-card" data-anim style="--i:3"><div class="chart-head"><span class="ct">${cd.title}</span><span class="cv">${money(sum(cd.vals))}</span></div><div class="chart" id="chart">${bars}</div></div>`;
-  // recent payments
-  const pays = App.jobs.filter(j=>j.status==='completed').sort((a,b)=>(b.date+ (b.time||'')).localeCompare(a.date+(a.time||''))).slice(0,6);
-  h += `<div class="badge" data-anim style="--i:4">${IC.clock}Recent payments</div>`;
-  if(pays.length===0) h += emptyState(IC.dollar,'No payments yet','Completed jobs and their payments show up here.','','');
+  h += `<div class="chart-card" data-anim style="--i:3"><div class="chart-head"><span class="ct">${esc(periodLabel(p,off))} · earnings</span><span class="cv">${money(sum(cd.vals))}</span></div><div class="chart" id="chart">${bars}</div></div>`;
+  // payments in the selected window
+  const pays = st.set.slice().sort((a,b)=>(b.date+ (b.time||'')).localeCompare(a.date+(a.time||''))).slice(0,8);
+  h += `<div class="badge" data-anim style="--i:4">${IC.clock}Payments · ${esc(periodLabel(p,off).toLowerCase())}</div>`;
+  if(pays.length===0) h += emptyState(IC.dollar,'No payments in this period','Use the arrows above to browse other weeks or months.','','');
   pays.forEach((j,i)=>{ const when = j.date===todayISO()?'Today':(j.date===addDays(todayISO(),-1)?'Yesterday':fmtDateShort(j.date));
     h += `<div class="pay" data-anim style="--i:${5+i}"><div class="pini" style="background:${avColor(j.name)}">${initials(j.name)}</div>
       <div class="pay-main"><div class="pay-name">${esc(j.name)}</div><div class="pay-sub">${esc(j.service)} · ${when} ${j.paymentMethod?`<span class="method">${esc(j.paymentMethod)}</span>`:(j.paid===false?'<span class="method">Unpaid</span>':'')}</div></div>
@@ -380,33 +421,198 @@ function renderClients(){
 }
 function filterCust(){ const q=(document.getElementById('custSearch').value||'').toLowerCase(); document.querySelectorAll('#custList .cust').forEach(c=>{ c.style.display=c.dataset.name.includes(q)?'flex':'none'; }); }
 
+/* ---- angle presets + extra icons ---- */
+IC.wheel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 14.4V21M9.9 11.1 4.3 8M14.1 11.1 19.7 8" stroke-linecap="round"/></svg>';
+IC.target = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke-linecap="round"/><circle cx="12" cy="12" r="2.5"/></svg>';
+const ANGLES = [
+  {id:'front34', name:'Front 3/4', hint:'Stand at the front driver-side corner', interior:false},
+  {id:'driver',  name:'Driver side', hint:'Square on to the driver side', interior:false},
+  {id:'rear34',  name:'Rear 3/4', hint:'Stand at the rear passenger-side corner', interior:false},
+  {id:'interior',name:'Interior', hint:'Front seats and dash in frame', interior:true},
+];
+
+function jobPhotoStatus(jobId){ let b=0,a=0; App.photoKeys.forEach(k=>{ const p=k.split('|'); if(p[0]===jobId){ if(p[2]==='before')b++; else if(p[2]==='after')a++; } }); return {before:b,after:a}; }
+function findFeaturedPair(){
+  const m={}; App.photoKeys.forEach(k=>{ const [jid,ang,ph]=k.split('|'); const kk=jid+'|'+ang; (m[kk]=m[kk]||{})[ph]=true; });
+  const cands=Object.keys(m).filter(kk=>m[kk].before&&m[kk].after);
+  if(!cands.length) return null;
+  let best=null;
+  cands.forEach(kk=>{ const [jid,ang]=kk.split('|'); const j=jobById(jid); const d=j?j.date:''; if(!best||d>best.date){ best={jobId:jid,angle:ang,date:d,job:j}; } });
+  return best;
+}
 function renderPhotos(){
-  const el=document.getElementById('s-photos');
-  const recent = App.jobs.filter(j=>j.status==='completed').sort((a,b)=>(b.date).localeCompare(a.date)).slice(0,5);
-  const feat = recent[0];
-  const colorClass=(v)=>{ v=String(v||'').toLowerCase(); if(v.includes('white')||v.includes('pearl')) return 'white'; if(v.includes('red')) return 'red'; if(v.includes('green')||v.includes('sarge')) return 'green'; return ''; };
+  const el=document.getElementById('s-photos'); const T=todayISO();
   let h = topbar('Portfolio','Gallery');
-  h += `<div class="badge" data-anim style="--i:1">${IC.camera}Latest before / after</div>`;
-  if(feat){
-    h += `<div class="ba-featured" data-anim style="--i:2"><div class="ba-wrap" id="baWrap">
-      <div class="ba-layer"><div class="panel before"><svg class="carg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">${IC.carLine.replace('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">','').replace('</svg>','')}</svg></div></div>
-      <div class="ba-layer ba-after" id="baAfter"><div class="panel after-p ${colorClass(feat.vehicle)}"><svg class="carg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">${IC.carLine.replace('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">','').replace('</svg>','')}</svg></div></div>
-      <span class="ba-tag b">Before</span><span class="ba-tag a">After</span>
-      <div class="ba-handle" id="baHandle"><div class="ba-knob">${IC.swap}</div></div>
-    </div><div class="ba-caption"><div><div class="cn">${esc(feat.name)} · ${esc((feat.vehicle||'').split(' ').slice(1,3).join(' '))}</div><div class="cs">${esc(feat.service)}</div></div><div class="cd">${feat.date===todayISO()?'Today':fmtDateShort(feat.date)}</div></div></div>`;
-    h += `<div class="tap-hint" data-anim style="--i:3">Drag the slider · tap any pair below to reveal</div>`;
+  const pair = findFeaturedPair();
+  if(pair){
+    const j=pair.job; const ang=ANGLES.find(a=>a.id===pair.angle);
+    h += `<div class="badge" data-anim style="--i:1">${IC.camera}Latest before / after</div>
+      <div class="ba-featured" data-anim style="--i:2"><div class="ba-wrap" id="baWrap">
+        <div class="ba-layer"><img id="featBefore" style="width:100%;height:100%;object-fit:cover;display:block" alt="Before"></div>
+        <div class="ba-layer ba-after" id="baAfter"><img id="featAfter" style="width:100%;height:100%;object-fit:cover;display:block" alt="After"></div>
+        <span class="ba-tag b">Before</span><span class="ba-tag a">After</span>
+        <div class="ba-handle" id="baHandle"><div class="ba-knob">${IC.swap}</div></div>
+      </div><div class="ba-caption"><div><div class="cn">${esc(j?j.name:'Job')} · ${esc(ang?ang.name:'')}</div><div class="cs">${esc(j?j.service:'')}</div></div><div class="cd">${j?(j.date===T?'Today':fmtDateShort(j.date)):''}</div></div></div>
+      <div class="tap-hint" data-anim style="--i:3">Drag the slider to compare</div>`;
+  } else {
+    h += `<div class="badge" data-anim style="--i:1">${IC.camera}Before / after</div>
+      <div class="today-note" data-anim style="--i:2"><span class="ic">${IC.camera}</span><div><div class="tn-h">No photos captured yet</div><div class="tn-s">Open a job below and shoot the before set. The app guides each angle.</div></div></div>`;
   }
-  h += `<div class="photo-grid" data-anim style="--i:4">`;
-  recent.slice(1).concat(recent.length<2?recent:[]).slice(0,4).forEach(j=>{
-    h += `<div class="pgrid-tile" onclick="this.classList.toggle('shown')"><div class="pgrid-ba">
-      <div class="panel before"></div><div class="reveal"><div class="panel after-p ${colorClass(j.vehicle)}"></div></div>
-      <span class="mini-tag b">Before</span><span class="mini-tag a">After</span></div>
-      <div class="pgrid-cap"><div class="n">${esc(j.name)}</div><div class="s">${esc((j.vehicle||'').split(' ').slice(1,3).join(' '))} · ${fmtDateShort(j.date)}</div></div></div>`; });
-  h += `</div>`;
-  if(recent.length===0){ h = topbar('Portfolio','Gallery') + emptyState(IC.camera,'No photos yet','Finish a job to start building your before / after gallery.','',''); }
+  // capture list: today's jobs + recent completed
+  const todays=App.jobs.filter(j=>j.date===T && statusOf(j)!=='cancelled');
+  const recent=App.jobs.filter(j=>j.status==='completed').sort((a,b)=>(b.date).localeCompare(a.date)).slice(0,10);
+  const seen=new Set(); const jobs=[];
+  todays.concat(recent).forEach(j=>{ if(!seen.has(j.id)){ seen.add(j.id); jobs.push(j); } });
+  h += `<div class="section-label" data-anim style="--i:3"><h3>Capture</h3><span class="more">${jobs.length} job${jobs.length!==1?'s':''}</span></div>`;
+  if(jobs.length===0){ h += emptyState(IC.camera,'No jobs to shoot','Add a job first, then capture its before/after here.','Add a job','onFab()'); el.innerHTML=h; return; }
+  jobs.forEach((j,i)=>{
+    const st=jobPhotoStatus(j.id); let pc='none', pt='Not started';
+    if(st.after>0){ pc=st.after>=ANGLES.length?'done':'part'; pt=st.after>=ANGLES.length?'Complete':st.after+'/'+ANGLES.length+' after'; }
+    else if(st.before>0){ pc='part'; pt=st.before+'/'+ANGLES.length+' before'; }
+    h += `<button class="pjob" data-anim style="--i:${4+Math.min(i,8)}" onclick="openCamera('${j.id}')">
+      <div class="pj-thumb" id="thumb-${j.id}"><div class="pj-ph">${IC.camera}</div></div>
+      <div class="pj-main"><div class="pj-n">${esc(j.name)}</div><div class="pj-s">${esc(j.vehicle)}</div><span class="pj-prog ${pc}">${st.after>=ANGLES.length?IC.check:''}${pt}</span></div>
+      <div class="pj-cam">${IC.camera}</div></button>`;
+  });
   el.innerHTML=h;
+  if(App.tab==='photos'){ if(pair) loadFeatured(pair); loadThumbs(jobs); }
   initSlider();
 }
+async function loadFeatured(pair){
+  const b=await photoGet(pair.jobId+'|'+pair.angle+'|before'); const a=await photoGet(pair.jobId+'|'+pair.angle+'|after');
+  const be=document.getElementById('featBefore'), ae=document.getElementById('featAfter');
+  if(be&&b) be.src=b; if(ae&&a) ae.src=a;
+}
+async function loadThumbs(jobs){
+  for(const j of jobs){
+    let key=null;
+    for(const ang of ANGLES){ if(App.photoKeys.has(j.id+'|'+ang.id+'|after')){ key=j.id+'|'+ang.id+'|after'; break; } }
+    if(!key) for(const ang of ANGLES){ if(App.photoKeys.has(j.id+'|'+ang.id+'|before')){ key=j.id+'|'+ang.id+'|before'; break; } }
+    if(key){ const data=await photoGet(key); const el=document.getElementById('thumb-'+j.id); if(el&&data) el.innerHTML='<img src="'+data+'">'; }
+  }
+}
+
+/* ============================================================
+   CAMERA CAPTURE  (before/after with angle guidance)
+   ============================================================ */
+const Cam = { jobId:null, angleIdx:0, phase:'before', stream:null, frozen:null };
+function openCamera(jobId){
+  const j=jobById(jobId); if(!j) return;
+  Cam.jobId=jobId; Cam.phase='before'; Cam.frozen=null;
+  const first=ANGLES.findIndex(a=>!App.photoKeys.has(jobId+'|'+a.id+'|before')); Cam.angleIdx=first>=0?first:0;
+  buildCameraUI(j);
+  document.getElementById('cameraView').classList.add('open');
+  startCam(); refreshCam();
+}
+function buildCameraUI(j){
+  document.getElementById('cameraView').innerHTML = `
+    <div class="cam-head">
+      <button class="cam-x" onclick="closeCamera()">${IC.x}</button>
+      <div class="cam-title"><div class="h">${esc(j.name)}</div><div class="s">${esc(j.vehicle)}</div></div>
+      <div class="cam-phase"><button id="camPhaseB" class="on" onclick="setCamPhase('before')">Before</button><button id="camPhaseA" onclick="setCamPhase('after')">After</button></div>
+    </div>
+    <div class="cam-stage" id="camStage">
+      <video id="camVideo" autoplay playsinline muted></video>
+      <img class="cam-ghost" id="camGhost" alt="">
+      <img class="cam-frozen" id="camFrozen" alt="">
+      <div class="cam-grid"></div>
+      <div class="cam-guide" id="camGuide"></div>
+      <div class="cam-hint" id="camHint"></div>
+      <div class="cam-nocam" id="camNoCam" style="display:none">${IC.camera}<div>Live camera isn't available here.<br>On your phone this shows the live view.</div>
+        <label class="cn-btn">${IC.camera}<span>Pick / take a photo</span><input type="file" accept="image/*" capture="environment" style="display:none" onchange="onCamFile(this)"></label></div>
+    </div>
+    <div class="cam-angles" id="camAngles"></div>
+    <div class="cam-controls" id="camControls">
+      <button class="cam-side" onclick="closeCamera()" aria-label="Gallery">${IC.camera}</button>
+      <button class="cam-shutter" id="camShutter" onclick="capturePhoto()" aria-label="Shutter"></button>
+      <button class="cam-side hidden"></button>
+    </div>
+    <div class="cam-review" id="camReview">
+      <button class="cam-retake" onclick="retakePhoto()">${IC.reset}<span>Retake</span></button>
+      <button class="cam-use" id="camUse" onclick="usePhoto()">${IC.check}<span>Use photo</span></button>
+    </div>`;
+}
+async function startCam(){
+  const v=document.getElementById('camVideo'), no=document.getElementById('camNoCam');
+  try{
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) throw 0;
+    Cam.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    v.srcObject=Cam.stream; v.style.display='block'; no.style.display='none';
+  }catch(e){ v.style.display='none'; no.style.display='flex'; const g=document.getElementById('camGuide'); if(g) g.style.display='none'; document.querySelectorAll('#cameraView .cam-grid').forEach(x=>x.style.display='none'); }
+}
+function stopCam(){ if(Cam.stream){ Cam.stream.getTracks().forEach(t=>t.stop()); Cam.stream=null; } }
+function refreshCam(){
+  renderCamAngles();
+  const ang=ANGLES[Cam.angleIdx]; const aft=Cam.phase==='after';
+  document.getElementById('camPhaseB').className = aft?'':'on';
+  document.getElementById('camPhaseA').className = aft?'on aft':'';
+  const hint=document.getElementById('camHint'); hint.className='cam-hint'+(aft?' aft':'');
+  hint.innerHTML = (aft?IC.swap:IC.target)+'<span>'+(aft?'Match the ghosted before shot':ang.hint)+'</span>';
+  document.getElementById('camGuide').innerHTML = ang.interior?IC.wheel:IC.carLine;
+  document.getElementById('camShutter').className='cam-shutter'+(aft?' aft':'');
+  document.getElementById('camUse').className='cam-use'+(aft?' aft':'');
+  Cam.frozen=null; const fr=document.getElementById('camFrozen'); fr.style.display='none';
+  document.getElementById('camReview').className='cam-review'; document.getElementById('camControls').style.display='flex';
+  loadGhost();
+}
+function renderCamAngles(){
+  document.getElementById('camAngles').innerHTML = ANGLES.map((a,i)=>{
+    const has=App.photoKeys.has(Cam.jobId+'|'+a.id+'|'+Cam.phase);
+    return `<button class="cam-angle ${i===Cam.angleIdx?'on':''}" onclick="setCamAngle(${i})">
+      <span class="aico">${a.interior?IC.wheel:IC.carLine}</span><span class="anm">${a.name}</span>${has?`<span class="adone">${IC.check}</span>`:''}</button>`;
+  }).join('');
+}
+function setCamAngle(i){ Cam.angleIdx=i; refreshCam(); }
+function setCamPhase(p){ Cam.phase=p; const first=ANGLES.findIndex(a=>!App.photoKeys.has(Cam.jobId+'|'+a.id+'|'+p)); Cam.angleIdx=first>=0?first:0; refreshCam(); }
+async function loadGhost(){
+  const g=document.getElementById('camGhost'), guide=document.getElementById('camGuide');
+  if(Cam.phase==='after'){
+    const data=await photoGet(Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|before');
+    if(data){ g.src=data; g.style.display='block'; guide.style.display='none'; return; }
+  }
+  g.style.display='none'; g.removeAttribute('src'); guide.style.display='grid';
+}
+function frameToDataURL(video){
+  const vw=video.videoWidth, vh=video.videoHeight; const scale=Math.min(1,1280/vw);
+  const cw=Math.round(vw*scale), ch=Math.round(vh*scale);
+  const c=document.createElement('canvas'); c.width=cw; c.height=ch; c.getContext('2d').drawImage(video,0,0,cw,ch);
+  return c.toDataURL('image/jpeg',0.75);
+}
+function showFrozen(data){
+  Cam.frozen=data; const fr=document.getElementById('camFrozen'); fr.src=data; fr.style.display='block';
+  document.getElementById('camControls').style.display='none'; document.getElementById('camReview').className='cam-review show';
+}
+function capturePhoto(){
+  const v=document.getElementById('camVideo');
+  if(!Cam.stream || !v.videoWidth){ const inp=document.querySelector('#camNoCam input'); if(inp) inp.click(); return; }
+  showFrozen(frameToDataURL(v));
+}
+function onCamFile(input){
+  const f=input.files&&input.files[0]; if(!f) return; const url=URL.createObjectURL(f); const img=new Image();
+  img.onload=()=>{ const scale=Math.min(1,1280/img.width); const cw=Math.round(img.width*scale),ch=Math.round(img.height*scale);
+    const c=document.createElement('canvas'); c.width=cw;c.height=ch;c.getContext('2d').drawImage(img,0,0,cw,ch); URL.revokeObjectURL(url); showFrozen(c.toDataURL('image/jpeg',0.75)); };
+  img.src=url;
+}
+function retakePhoto(){ Cam.frozen=null; document.getElementById('camFrozen').style.display='none'; document.getElementById('camControls').style.display='flex'; document.getElementById('camReview').className='cam-review'; }
+async function usePhoto(){
+  if(!Cam.frozen) return;
+  const ang=ANGLES[Cam.angleIdx]; const key=Cam.jobId+'|'+ang.id+'|'+Cam.phase;
+  try{ await photoPut(key,Cam.frozen); App.photoKeys.add(key); toast((Cam.phase==='before'?'Before':'After')+' · '+ang.name+' saved'); }
+  catch(e){ toast('Could not save photo'); }
+  const next=ANGLES.findIndex((a,i)=>i>Cam.angleIdx && !App.photoKeys.has(Cam.jobId+'|'+a.id+'|'+Cam.phase));
+  if(next>=0) Cam.angleIdx=next;
+  refreshCam(); renderPhotos();
+}
+function closeCamera(){ stopCam(); document.getElementById('cameraView').classList.remove('open'); renderPhotos(); }
+
+/* IndexedDB photo store */
+let _idb=null;
+function idb(){ return new Promise((res,rej)=>{ if(_idb) return res(_idb); if(!('indexedDB' in window)) return rej('no-idb');
+  const r=indexedDB.open('yd-photos',1); r.onupgradeneeded=()=>{ if(!r.result.objectStoreNames.contains('photos')) r.result.createObjectStore('photos'); };
+  r.onsuccess=()=>{ _idb=r.result; res(_idb); }; r.onerror=()=>rej(r.error); }); }
+function photoPut(key,val){ return idb().then(d=>new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite'); t.objectStore('photos').put(val,key); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); })); }
+function photoGet(key){ return idb().then(d=>new Promise(res=>{ const t=d.transaction('photos','readonly'); const rq=t.objectStore('photos').get(key); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); })).catch(()=>null); }
+function loadPhotoKeys(){ idb().then(d=>{ const t=d.transaction('photos','readonly'); const rq=t.objectStore('photos').getAllKeys(); rq.onsuccess=()=>{ App.photoKeys=new Set((rq.result||[]).map(String)); if(App.tab==='photos') renderPhotos(); }; }).catch(()=>{}); }
 
 /* ============================================================
    NAV / TABS
@@ -419,9 +625,11 @@ function setTab(name){
   el.classList.remove('in'); void el.offsetWidth; el.classList.add('in'); el.scrollTop=0;
   updateFab();
   if(name==='money') requestAnimationFrame(()=>requestAnimationFrame(playChart));
+  if(name==='photos') renderPhotos();
 }
 function setJobView(v){ App.jobView=v; renderJobs(); const el=document.getElementById('s-jobs'); el.classList.remove('in'); void el.offsetWidth; el.classList.add('in'); }
-function setMoneyPeriod(p){ App.moneyPeriod=p; renderMoney(); requestAnimationFrame(()=>requestAnimationFrame(playChart)); }
+function setMoneyPeriod(p){ App.moneyPeriod=p; App.moneyOffset=0; renderMoney(); requestAnimationFrame(()=>requestAnimationFrame(playChart)); }
+function stepPeriod(dir){ const n=App.moneyOffset+dir; if(n>0) return; App.moneyOffset=n; renderMoney(); requestAnimationFrame(()=>requestAnimationFrame(playChart)); }
 function playChart(){ const c=document.getElementById('chart'); if(c){ void c.offsetWidth; c.classList.add('play'); } }
 function updateFab(){ const fab=document.getElementById('fab'); fab.classList.toggle('hide', !(App.tab==='jobs'||App.tab==='clients')); }
 function onFab(){ if(App.tab==='clients') openClientForm(); else openJobForm(); }
@@ -677,7 +885,6 @@ function initSlider(){
   window.addEventListener('pointerup',()=>drag=false);
 }
 
-function startClock(){ const c=document.getElementById('clock'); const upd=()=>{ const d=new Date(); let h=d.getHours(); const m=pad(d.getMinutes()); const ap=h<12?'':''; let hh=h%12; if(hh===0)hh=12; c.textContent=hh+':'+m; }; upd(); setInterval(upd,10000); }
 function registerSW(){ if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){} } }
 
 function applyHash(){
@@ -691,14 +898,15 @@ function applyHash(){
   else if(k==='newjob'){ setTab('jobs'); openJobForm(); }
   else if(k==='newclient'){ setTab('clients'); openClientForm(); }
   else if(k==='pay'&&v){ setTab('jobs'); methodSheet(v,true); }
+  else if(k==='camera'&&v){ setTab('photos'); openCamera(v); }
 }
 
 /* ---------- boot ---------- */
 function boot(){
   loadSeed();
   setTab('jobs');
-  startClock();
   registerSW();
+  loadPhotoKeys();
   if(localStorage.getItem('yd_source')==='live') tryResumeLive();
   window.addEventListener('hashchange',applyHash);
   applyHash();
