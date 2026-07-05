@@ -959,8 +959,15 @@ function openEmailSignIn(){
       <div class="field"><label>Email</label><input id="es_email" type="email" autocomplete="username" placeholder="you@gmail.com"></div>
       <div class="field"><label>Password</label><input id="es_pw" type="password" autocomplete="current-password" placeholder="App password"></div>
       <p style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.5;padding:2px 4px 0">Same account as Google sign-in. No password yet? Open this page in Safari, connect with Google, then tap "App password" in Settings.</p>
+      <p style="font-size:13px;font-weight:700;padding:8px 4px 0"><a href="#" onclick="sendReset();return false" style="color:var(--orange)">Forgot password? Email me a reset link</a></p>
     </div>
     <div class="confirm-actions"><button class="btn-cancel" onclick="closeSheet()">Cancel</button><button class="btn-confirm" onclick="emailSignIn()">Sign in</button></div>`);
+}
+async function sendReset(){
+  const email=(document.getElementById('es_email').value||'').trim();
+  if(!email){ toast('Type your email above first'); return; }
+  try{ fbInit(); await firebase.auth().sendPasswordResetEmail(email); toast('Reset link sent. Check email (and spam).'); }
+  catch(e){ toast('Could not send: '+(e.code||e.message||'error')); }
 }
 async function emailSignIn(){
   const email=(document.getElementById('es_email').value||'').trim();
