@@ -244,7 +244,7 @@ input,select,textarea{font-family:inherit;}
 .tap-hint{text-align:center;font-size:11.5px;color:var(--muted);font-weight:600;margin:2px 0 16px;}
 
 .tabbar{flex:0 0 auto;position:relative;z-index:40;display:flex;align-items:center;justify-content:space-around;padding:9px 12px calc(9px + var(--safe-b));background:rgba(252,246,238,.86);backdrop-filter:blur(18px) saturate(1.4);border-top:1px solid var(--line-2);box-shadow:0 -8px 24px -18px rgba(40,26,14,.4);}
-.tab{display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 14px;border-radius:14px;flex:1;max-width:88px;transition:background .2s;}
+.tab{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 14px;border-radius:14px;flex:1;max-width:88px;transition:background .2s;}
 .tab svg{width:24px;height:24px;color:var(--muted-2);transition:color .2s, transform .3s;}
 .tab .tl{font-size:10.5px;font-weight:700;color:var(--muted-2);transition:color .2s;}
 .tab.on svg{color:var(--orange);transform:translateY(-1px);}
@@ -472,6 +472,33 @@ input,select,textarea{font-family:inherit;}
 .cam-use{background:var(--green);color:#fff;}
 .cam-use.aft{background:var(--orange);}
 
+/* job form: vehicle type + service tiles + add-ons */
+.vtype{display:flex;gap:8px;}
+.vtype button{flex:1;padding:11px 6px;border-radius:12px;background:var(--surface);border:1.5px solid var(--line);font-weight:700;font-size:13.5px;color:var(--muted);transition:all .15s;}
+.vtype button.on{background:var(--orange-soft);border-color:var(--orange);color:var(--orange-d);}
+.svc-tiles{display:flex;flex-direction:column;gap:9px;}
+.svc-tile{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;border-radius:13px;background:var(--surface);border:1.5px solid var(--line);transition:all .15s;text-align:left;width:100%;}
+.svc-tile.on{border-color:var(--orange);background:var(--orange-soft);}
+.svc-tile .st-n{font-family:var(--font-d);font-weight:600;font-size:14.5px;color:var(--ink);}
+.svc-tile .st-d{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:1px;}
+.svc-tile .st-p{font-family:var(--font-d);font-weight:600;font-size:16px;color:var(--orange-d);font-variant-numeric:tabular-nums;flex:0 0 auto;}
+.addon-row{display:flex;flex-wrap:wrap;gap:7px;}
+.addon-chip{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:11px;background:var(--surface);border:1.5px solid var(--line);font-size:13px;font-weight:700;color:var(--muted);transition:all .15s;}
+.addon-chip.on{background:var(--orange-soft);border-color:var(--orange);color:var(--orange-d);}
+.addon-chip .ap{font-size:11px;font-weight:800;opacity:.75;}
+/* reconcile banner + tab badge */
+.reco-banner{display:flex;align-items:center;gap:11px;background:linear-gradient(150deg,#FFF6EA,#FDEAD3);border:1px solid var(--orange-soft);border-radius:var(--r-md);padding:11px 12px;margin-bottom:14px;box-shadow:var(--sh-sm);}
+.reco-banner .rb-ic{width:38px;height:38px;border-radius:12px;background:#fff;display:grid;place-items:center;flex:0 0 auto;box-shadow:var(--sh-sm);}
+.reco-banner .rb-ic svg{width:19px;height:19px;color:var(--orange-d);}
+.reco-banner .rb-txt{flex:1;min-width:0;}
+.reco-banner .rb-h{font-family:var(--font-d);font-weight:600;font-size:13.5px;color:var(--ink);line-height:1.2;}
+.reco-banner .rb-s{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px;}
+.reco-banner .rb-add{background:linear-gradient(180deg,#EE8F3B,#DB7620);color:#fff;font-weight:700;font-size:13px;padding:9px 15px;border-radius:11px;flex:0 0 auto;box-shadow:0 6px 14px -6px rgba(228,131,47,.6);}
+.reco-banner .rb-x{width:30px;height:30px;border-radius:9px;background:rgba(40,26,14,.06);display:grid;place-items:center;flex:0 0 auto;}
+.reco-banner .rb-x svg{width:14px;height:14px;color:var(--muted);}
+.tab-badge{position:absolute;top:3px;right:16px;width:9px;height:9px;border-radius:50%;background:var(--coral);border:2px solid var(--cream);display:none;}
+.tab-badge.show{display:block;}
+
 @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important;}.bar{transform:scaleY(1)!important;}}
 </style>
 </head>
@@ -501,7 +528,7 @@ input,select,textarea{font-family:inherit;}
   <nav class="tabbar">
     <button class="tab on" data-tab="jobs" onclick="setTab('jobs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4M9 15l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="tl">Today</span></button>
     <button class="tab" data-tab="money" onclick="setTab('money')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="tl">Money</span></button>
-    <button class="tab" data-tab="clients" onclick="setTab('clients')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.4"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" stroke-linecap="round"/><path d="M16 5.2a3.4 3.4 0 0 1 0 6M18 14.5c2.3.6 4 2.4 4 5.5" stroke-linecap="round"/></svg><span class="tl">Clients</span></button>
+    <button class="tab" data-tab="clients" onclick="setTab('clients')"><span class="tab-badge" id="clientsBadge"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.4"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" stroke-linecap="round"/><path d="M16 5.2a3.4 3.4 0 0 1 0 6M18 14.5c2.3.6 4 2.4 4 5.5" stroke-linecap="round"/></svg><span class="tl">Clients</span></button>
     <button class="tab" data-tab="photos" onclick="setTab('photos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M8 6l1.2-2.2A2 2 0 0 1 11 3h2a2 2 0 0 1 1.8 1L16 6" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2"/></svg><span class="tl">Photos</span></button>
   </nav>
 </div>

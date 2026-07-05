@@ -7,14 +7,26 @@
 const FB_CONFIG = { apiKey:"AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E", authDomain:"yddetailers.firebaseapp.com", projectId:"yddetailers" };
 let db = null;
 
-const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, _unsub:[], photoKeys:new Set() };
+const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, _unsub:[], photoKeys:new Set(), _dismissReconcile:false };
 
 const SERVICES = [
-  {id:'exterior', name:'Exterior Detail', price:130},
-  {id:'interior', name:'Interior Reset', price:170},
-  {id:'signature', name:'Signature Full Detail', price:240},
+  {id:'exterior', name:'Premium Exterior Detail', cat:'ext',  prices:{Sedan:90,  SUV:100, Truck:120}},
+  {id:'interior', name:'Interior Reset Detail',   cat:'int',  prices:{Sedan:150, SUV:180, Truck:200}},
+  {id:'full',     name:'Signature Full Vehicle Detail', cat:'full', prices:{Sedan:220, SUV:260, Truck:300}},
 ];
-const ADDONS = ['Clay bar','Ceramic spray','Pet hair','Steam clean','Odor treatment','Leather condition','Bug removal','Undercarriage'];
+const VTYPES = ['Sedan','SUV','Truck'];
+const ADDONS = [
+  {id:'ceramic',    cat:'ext', name:'Ceramic Coating',        price:50},
+  {id:'wax',        cat:'ext', name:'Wax Sealant',            price:35},
+  {id:'clay',       cat:'ext', name:'Clay Bar Treatment',     price:40},
+  {id:'enginebay',  cat:'ext', name:'Engine Bay Cleaning',    price:50},
+  {id:'sap',        cat:'ext', name:'Tree Sap Removal',       price:35},
+  {id:'trim',       cat:'ext', name:'Trim / Mat Restoration', price:35},
+  {id:'pethair',    cat:'int', name:'Pet Hair Removal',       price:30},
+  {id:'protectant', cat:'int', name:'Interior Protectant',    price:30},
+];
+function svcById(id){ return SERVICES.find(s=>s.id===id); }
+function addonsForCat(cat){ if(cat==='int') return ADDONS.filter(a=>a.cat==='int'); if(cat==='ext') return ADDONS.filter(a=>a.cat==='ext'); return ADDONS; }
 const METHODS = ['Cash','Zelle','Venmo','Card'];
 const AVC = ['linear-gradient(150deg,#E4832F,#CE6E1B)','linear-gradient(150deg,#8A6BD8,#6B4FBB)','linear-gradient(150deg,#5385E0,#3E68C4)','linear-gradient(150deg,#22A579,#178560)','linear-gradient(150deg,#EF6B5E,#D8493A)','linear-gradient(150deg,#E8739B,#CE5480)','linear-gradient(150deg,#5FA8B5,#3E8592)'];
 
@@ -89,15 +101,15 @@ const STMETA = { paid:['paid','Paid'], progress:['progress','In progress'], upco
 function vehName(b){ return b.vehicle || b.vehicleModel || b.car || [b.vehName,b.vehType].filter(Boolean).join(' ') || 'Vehicle'; }
 function bookingToJob(b){
   return { id:b.id, name:b.name||'Client', clientId:b.clientId||'', phone:b.phone||'', email:b.email||'',
-    vehicle:vehName(b), service:b.service||'Detail', price:+b.price||0, tip:+b.tip||0, addons:Array.isArray(b.addons)?b.addons:[],
+    vehicle:vehName(b), vehType:b.vehType||'', service:b.service||'Detail', serviceId:b.serviceId||'', price:+b.price||0, tip:+b.tip||0, addons:Array.isArray(b.addons)?b.addons:[],
     date:b.date||'', time:(b.time||'').slice(0,5), address:b.address||'', notes:b.notes||'',
     status:b.status||'', paid:(typeof b.paid==='boolean')?b.paid:undefined, paymentMethod:b.paymentMethod||b.payment||'',
     startedAt:b.startedAt||null };
 }
 function jobToBooking(j){
-  const o = { name:j.name, clientId:j.clientId||'', phone:j.phone||'', email:j.email||'', service:j.service, price:+j.price||0,
-    tip:+j.tip||0, addons:j.addons||[], date:j.date, time:j.time, address:j.address||'', notes:j.notes||'',
-    status:j.status||'', payment:j.paymentMethod||'', vehicle:j.vehicle||'', manual:true, updatedAt:Date.now() };
+  const o = { name:j.name, clientId:j.clientId||'', phone:j.phone||'', email:j.email||'', service:j.service, serviceId:j.serviceId||'', price:+j.price||0,
+    basePrice:+j.basePrice||0, addonTotal:+j.addonTotal||0, tip:+j.tip||0, addons:j.addons||[], date:j.date, time:j.time, address:j.address||'', notes:j.notes||'',
+    status:j.status||'', payment:j.paymentMethod||'', vehicle:j.vehicle||'', vehName:j.vehicle||'', vehType:j.vehType||'', manual:true, updatedAt:Date.now() };
   if(typeof j.paid==='boolean') o.paid=j.paid;
   if(j.startedAt) o.startedAt=j.startedAt;
   return o;
@@ -201,7 +213,7 @@ function saveRecord(coll,obj){
 /* ============================================================
    RENDER
    ============================================================ */
-function renderAll(){ renderJobs(); renderMoney(); renderClients(); renderPhotos(); updateFab(); }
+function renderAll(){ renderJobs(); renderMoney(); renderClients(); renderPhotos(); updateFab(); updateReconcileBadge(); }
 
 function topbar(eyebrow,title){
   return `<header class="topbar" data-anim style="--i:0"><div><div class="eyebrow">${esc(eyebrow)}</div><h1 class="screen-title">${esc(title)}<span class="dot">.</span></h1></div>
@@ -402,11 +414,43 @@ function renderMoney(){
   el.innerHTML=h;
 }
 
+/* ---- reconcile: bookers with no client record ---- */
+function reconcileList(){
+  const known=new Set(App.clients.map(c=>(c.name||'').toLowerCase().trim()).filter(Boolean));
+  const map={};
+  App.jobs.forEach(j=>{ const nm=(j.name||'').trim(); if(!nm||j.clientId) return; const key=nm.toLowerCase(); if(known.has(key)) return;
+    if(!map[key]) map[key]={name:nm,phone:j.phone||'',email:j.email||'',tag:j.vehicle||'',last:j.date||''};
+    else if((j.date||'')>map[key].last){ map[key].last=j.date||''; if(j.phone)map[key].phone=j.phone; if(j.vehicle)map[key].tag=j.vehicle; }
+  });
+  return Object.values(map);
+}
+function reconcileBanner(rl){
+  return `<div class="reco-banner" data-anim style="--i:1"><span class="rb-ic">${IC.users}</span>
+    <div class="rb-txt"><div class="rb-h">${rl.length} booker${rl.length>1?'s':''} not in Clients yet</div><div class="rb-s">Add so they show up here${App.source==='live'?' and in your CRM':''}.</div></div>
+    <button class="rb-add" onclick="addAllBookers()">Add</button><button class="rb-x" onclick="dismissReconcile()" aria-label="Dismiss">${IC.x}</button></div>`;
+}
+function dismissReconcile(){ App._dismissReconcile=true; renderClients(); updateReconcileBadge(); }
+function addAllBookers(){
+  const list=reconcileList(); if(!list.length) return;
+  confirmSheet({icon:IC.users,tint:'tint-o',title:`Add ${list.length} client${list.length>1?'s':''}?`,msg:`These people have bookings but no client record. This creates ${list.length} new client${list.length>1?'s':''} in your ${App.source==='live'?'live CRM':'local list'}.`,ok:'Add all',onOk:async()=>{
+    if(App.source==='live'){
+      try{ for(const b of list){ await db.collection('clients').add({name:b.name,phone:b.phone||'',email:b.email||'',tag:b.tag||'',status:'new',notes:'',createdAt:Date.now(),updatedAt:Date.now()}); } toast('Added '+list.length+' client'+(list.length>1?'s':'')); }
+      catch(e){ toast('Add failed: '+(e.code||e.message||'error')); }
+    } else {
+      list.forEach((b,i)=>App.clients.push({id:'local-clients-'+Date.now()+'-'+i,name:b.name,phone:b.phone||'',email:b.email||'',tag:b.tag||'',status:'new',notes:''}));
+      persistLocal(); renderAll(); toast('Added '+list.length+' client'+(list.length>1?'s':''));
+    }
+    updateReconcileBadge();
+  }});
+}
+function updateReconcileBadge(){ const b=document.getElementById('clientsBadge'); if(b) b.classList.toggle('show', reconcileList().length>0 && !App._dismissReconcile); }
+
 function renderClients(){
   const el=document.getElementById('s-clients');
   const list = App.clients.map(c=>({c,agg:clientAgg(c)})).sort((a,b)=>b.agg.spend-a.agg.spend);
   let h = topbar(App.clients.length+' total','Clients');
   h += `<div class="search" data-anim style="--i:1">${IC.search}<input type="text" id="custSearch" placeholder="Search clients or vehicles" oninput="filterCust()"></div>`;
+  const _rl = reconcileList(); if(_rl.length && !App._dismissReconcile) h += reconcileBanner(_rl);
   h += `<div class="badge" data-anim style="--i:2">${IC.star}Top regulars</div>`;
   if(list.length===0){ h += emptyState(IC.users,'No clients yet','Add your first client, or connect your live CRM in Settings.','Add client','openClientForm()'); el.innerHTML=h; return; }
   h += `<div id="custList">`;
@@ -728,15 +772,22 @@ const sheetEl=()=>document.getElementById('sheet'); const scrimEl=()=>document.g
 function openSheet(html){ sheetEl().innerHTML=html; requestAnimationFrame(()=>{ scrimEl().classList.add('open'); sheetEl().classList.add('open'); }); }
 function closeSheet(){ scrimEl().classList.remove('open'); sheetEl().classList.remove('open'); }
 
-let _editAddons=[];
+let JF = { vehType:'Sedan', serviceId:'interior', addons:[], _manual:false };
+function guessServiceId(job){
+  if(job){ if(job.serviceId && svcById(job.serviceId)) return job.serviceId;
+    const n=(job.service||'').toLowerCase();
+    if(n.includes('full')||n.includes('signature')) return 'full';
+    if(n.includes('interior')) return 'interior';
+    if(n.includes('exterior')) return 'exterior'; }
+  return 'interior';
+}
 function openJobForm(id, prefillClient){
-  const j = id? jobById(id) : null;
-  _editAddons = j? (j.addons||[]).slice() : [];
-  const pc = prefillClient||null;
-  const name = j?j.name:(pc?pc.name:''); const phone=j?j.phone:(pc?pc.phone:''); const veh=j?j.vehicle:(pc?pc.tag:'');
-  const svc = j?j.service:SERVICES[0].name; const price=j?j.price:SERVICES[0].price;
+  const j = id? jobById(id) : null; const pc = prefillClient||null;
+  JF = { vehType:(j&&j.vehType&&VTYPES.includes(j.vehType))?j.vehType:'Sedan', serviceId:guessServiceId(j), addons:[], _manual:!!j };
+  if(j&&Array.isArray(j.addons)) j.addons.forEach(nm=>{ const a=ADDONS.find(a=>a.name.toLowerCase()===String(nm).toLowerCase()||String(nm).toLowerCase().includes(a.name.toLowerCase().split(' ')[0])); if(a&&!JF.addons.includes(a.id)) JF.addons.push(a.id); });
+  const name=j?j.name:(pc?pc.name:''); const phone=j?j.phone:(pc?pc.phone:''); const veh=j?j.vehicle:(pc?pc.tag:'');
   const date=j?j.date:todayISO(); const time=j?j.time:'09:00'; const addr=j?j.address:''; const notes=j?j.notes:'';
-  const cid = j?j.clientId:(pc?pc.id:'');
+  const cid=j?j.clientId:(pc?pc.id:''); const price=j?j.price:'';
   openSheet(`
     <div class="sheet-grip"></div>
     <div class="sheet-head"><h3>${j?'Edit job':'New job'}</h3><button class="x" onclick="closeSheet()">${IC.x}</button></div>
@@ -744,28 +795,39 @@ function openJobForm(id, prefillClient){
       <input type="hidden" id="f_id" value="${j?j.id:''}"><input type="hidden" id="f_cid" value="${esc(cid)}">
       <div class="field"><label>Client name</label><input id="f_name" value="${esc(name)}" placeholder="Full name"></div>
       <div class="field-row"><div class="field"><label>Phone</label><input id="f_phone" type="tel" value="${esc(phone)}" placeholder="(617) 555-0123"></div>
-        <div class="field"><label>Vehicle</label><input id="f_veh" value="${esc(veh)}" placeholder="2021 Audi Q5 Black"></div></div>
-      <div class="field"><label>Service</label><select id="f_svc" onchange="onSvcChange()">${SERVICES.map(s=>`<option value="${esc(s.name)}" data-price="${s.price}" ${s.name===svc?'selected':''}>${esc(s.name)} — $${s.price}</option>`).join('')}<option value="__custom" ${!SERVICES.find(s=>s.name===svc)?'selected':''}>Custom</option></select></div>
-      <div class="field-row"><div class="field"><label>Price ($)</label><input id="f_price" type="number" inputmode="numeric" value="${price}"></div>
+        <div class="field"><label>Vehicle (make / model)</label><input id="f_veh" value="${esc(veh)}" placeholder="2021 Audi Q5 Black"></div></div>
+      <div class="field"><label>Vehicle type</label><div class="vtype" id="jf_vtype"></div></div>
+      <div class="field"><label>Service</label><div class="svc-tiles" id="jf_services"></div></div>
+      <div class="field"><label>Add-ons</label><div class="addon-row" id="jf_addons"></div></div>
+      <div class="field-row"><div class="field"><label>Price ($)</label><input id="f_price" type="number" inputmode="numeric" value="${price}" oninput="JF._manual=true"></div>
         <div class="field"><label>Date</label><input id="f_date" type="date" value="${date}"></div></div>
-      <div class="field"><label>Time</label><input id="f_time" type="time" value="${time}"></div>
-      <div class="field"><label>Address</label><input id="f_addr" value="${esc(addr)}" placeholder="Street, city"></div>
-      <div class="field"><label>Add-ons</label><div class="chip-select" id="f_addons">${ADDONS.map(a=>`<button type="button" class="chip-opt ${_editAddons.includes(a)?'on':''}" onclick="toggleAddon(this,'${esc(a)}')">${esc(a)}</button>`).join('')}</div></div>
+      <div class="field-row"><div class="field"><label>Time</label><input id="f_time" type="time" value="${time}"></div>
+        <div class="field"><label>Address</label><input id="f_addr" value="${esc(addr)}" placeholder="Street, city"></div></div>
       <div class="field"><label>Notes</label><textarea id="f_notes" placeholder="Gate codes, pets, problem areas…">${esc(notes)}</textarea></div>
     </div>
     <div class="sheet-cta"><button class="btn-primary" onclick="submitJob()">${IC.check}<span>${j?'Save changes':'Add job'}</span></button></div>`);
+  jfRenderVtype(); jfRenderServices(); jfRenderAddons();
+  if(!j) jfRecalc();
 }
-function onSvcChange(){ const sel=document.getElementById('f_svc'); const opt=sel.options[sel.selectedIndex]; const p=opt.getAttribute('data-price'); if(p) document.getElementById('f_price').value=p; }
-function toggleAddon(btn,a){ const i=_editAddons.indexOf(a); if(i>=0){_editAddons.splice(i,1);btn.classList.remove('on');} else {_editAddons.push(a);btn.classList.add('on');} }
+function jfRenderVtype(){ document.getElementById('jf_vtype').innerHTML = VTYPES.map(t=>`<button type="button" class="${JF.vehType===t?'on':''}" onclick="jfSetVtype('${t}')">${t}</button>`).join(''); }
+function jfRenderServices(){ document.getElementById('jf_services').innerHTML = SERVICES.map(s=>`<button type="button" class="svc-tile ${JF.serviceId===s.id?'on':''}" onclick="jfSetService('${s.id}')"><div><div class="st-n">${s.name}</div><div class="st-d">${s.cat==='int'?'Interior only':s.cat==='ext'?'Exterior only':'Interior + exterior'}</div></div><div class="st-p">$${s.prices[JF.vehType]}</div></button>`).join(''); }
+function jfRenderAddons(){ const s=svcById(JF.serviceId); const list=addonsForCat(s?s.cat:'full'); JF.addons=JF.addons.filter(id=>list.some(a=>a.id===id));
+  document.getElementById('jf_addons').innerHTML = list.map(a=>`<button type="button" class="addon-chip ${JF.addons.includes(a.id)?'on':''}" onclick="jfToggleAddon('${a.id}')">${a.name} <span class="ap">+$${a.price}</span></button>`).join(''); }
+function jfSetVtype(t){ JF.vehType=t; JF._manual=false; jfRenderVtype(); jfRenderServices(); jfRecalc(); }
+function jfSetService(id){ JF.serviceId=id; JF._manual=false; jfRenderServices(); jfRenderAddons(); jfRecalc(); }
+function jfToggleAddon(id){ const i=JF.addons.indexOf(id); if(i>=0)JF.addons.splice(i,1); else JF.addons.push(id); JF._manual=false; jfRenderAddons(); jfRecalc(); }
+function jfBase(){ const s=svcById(JF.serviceId); return s?s.prices[JF.vehType]:0; }
+function jfAddTotal(){ return ADDONS.filter(a=>JF.addons.includes(a.id)).reduce((x,a)=>x+a.price,0); }
+function jfRecalc(){ if(JF._manual) return; const el=document.getElementById('f_price'); if(el) el.value = jfBase()+jfAddTotal(); }
 function submitJob(){
   const name=document.getElementById('f_name').value.trim();
   if(!name){ toast('Enter a client name'); return; }
+  const s=svcById(JF.serviceId); const addObjs=ADDONS.filter(a=>JF.addons.includes(a.id));
   const j={ id:document.getElementById('f_id').value||('new-'+Date.now()), clientId:document.getElementById('f_cid').value||'',
-    name, phone:document.getElementById('f_phone').value.trim(), vehicle:document.getElementById('f_veh').value.trim(),
-    service:document.getElementById('f_svc').value==='__custom'?'Detail':document.getElementById('f_svc').value,
-    price:+document.getElementById('f_price').value||0, date:document.getElementById('f_date').value||todayISO(),
-    time:document.getElementById('f_time').value||'09:00', address:document.getElementById('f_addr').value.trim(),
-    notes:document.getElementById('f_notes').value.trim(), addons:_editAddons.slice() };
+    name, phone:document.getElementById('f_phone').value.trim(), vehicle:document.getElementById('f_veh').value.trim(), vehType:JF.vehType,
+    service:s?s.name:'Detail', serviceId:JF.serviceId, price:+document.getElementById('f_price').value||0, basePrice:jfBase(), addonTotal:jfAddTotal(),
+    date:document.getElementById('f_date').value||todayISO(), time:document.getElementById('f_time').value||'09:00',
+    address:document.getElementById('f_addr').value.trim(), notes:document.getElementById('f_notes').value.trim(), addons:addObjs.map(a=>a.name) };
   const existing = jobById(j.id); if(existing){ j.status=existing.status; j.paid=existing.paid; j.tip=existing.tip; j.paymentMethod=existing.paymentMethod; j.startedAt=existing.startedAt; }
   else { j.status=''; j.tip=0; }
   saveRecord('jobs',j).then(ok=>{ if(ok){ closeSheet(); closeJob(); } });
