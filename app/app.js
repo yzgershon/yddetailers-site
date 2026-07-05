@@ -903,6 +903,11 @@ function openSettings(){
       <div class="mode-banner ${live?'live':''}">${live?IC.cloud:IC.gear}${live?'Live · connected to your CRM':'Local mode · demo data on this device'}</div>
       <div class="set-row"><span class="si ${live?'tint-g':'tint-o'}">${IC.cloud}</span><div class="st"><div class="h">${live?'Connected':'Connect to live CRM'}</div><div class="s">${live?(App.user&&App.user.email?esc(App.user.email):'Signed in'):'Sign in with Google to sync real bookings, clients & money.'}</div></div>
         <button class="set-btn ${live?'on':''}" onclick="${live?'disconnectLive()':'connectLive()'}">${live?'Disconnect':'Connect'}</button></div>
+      ${live
+        ? `<div class="set-row"><span class="si tint-b">${IC.check}</span><div class="st"><div class="h">App password</div><div class="s">Set a password so the home-screen app can sign in without Google.</div></div>
+        <button class="set-btn" onclick="openSetPassword()">Set</button></div>`
+        : `<div class="set-row"><span class="si tint-b">${IC.users}</span><div class="st"><div class="h">Email sign-in</div><div class="s">For the installed app. Set your app password in Safari first.</div></div>
+        <button class="set-btn" onclick="openEmailSignIn()">Sign in</button></div>`}
       <div class="set-row"><span class="si tint-b">${IC.reset}</span><div class="st"><div class="h">Reset demo data</div><div class="s">Restore the sample jobs & clients (local mode only).</div></div>
         <button class="set-btn" onclick="resetDemo()">Reset</button></div>
       <p style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.5;padding:6px 4px 0">Live mode reads and writes your real YDdetailers Firestore. Writes are merge-only and ask you to confirm. Add this page to your home screen to run it like an app.</p>
@@ -941,6 +946,61 @@ function finishRedirect(){
   firebase.auth().getRedirectResult().then(r=>{
     if(r && r.user){ db=firebase.firestore(); App.user=r.user; App.source='live'; localStorage.setItem('yd_source','live'); subscribeLive(); toast('Connected to live CRM'); }
   }).catch(e=>{ localStorage.setItem('yd_source','seed'); toast('Sign-in failed: '+(e.code||e.message||'error')); });
+}
+
+/* Email/password sign-in — for installed home-screen apps, where the Google
+   redirect round-trip is unreliable on iOS. Same account: the password is
+   linked onto the Google identity via "App password" in Settings (in Safari). */
+function openEmailSignIn(){
+  openSheet(`
+    <div class="sheet-grip"></div>
+    <div class="sheet-head"><h3>Email sign-in</h3><button class="x" onclick="closeSheet()">${IC.x}</button></div>
+    <div class="sheet-body">
+      <div class="field"><label>Email</label><input id="es_email" type="email" autocomplete="username" placeholder="you@gmail.com"></div>
+      <div class="field"><label>Password</label><input id="es_pw" type="password" autocomplete="current-password" placeholder="App password"></div>
+      <p style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.5;padding:2px 4px 0">Same account as Google sign-in. No password yet? Open this page in Safari, connect with Google, then tap "App password" in Settings.</p>
+    </div>
+    <div class="confirm-actions"><button class="btn-cancel" onclick="closeSheet()">Cancel</button><button class="btn-confirm" onclick="emailSignIn()">Sign in</button></div>`);
+}
+async function emailSignIn(){
+  const email=(document.getElementById('es_email').value||'').trim();
+  const pw=document.getElementById('es_pw').value||'';
+  if(!email||!pw){ toast('Enter email and password'); return; }
+  try{
+    db=fbInit();
+    await firebase.auth().signInWithEmailAndPassword(email,pw);
+    App.user=firebase.auth().currentUser; App.source='live'; localStorage.setItem('yd_source','live');
+    subscribeLive(); closeSheet(); toast('Connected to live CRM');
+  }catch(e){ toast('Sign-in failed: '+(e.code||e.message||'error')); }
+}
+function openSetPassword(){
+  openSheet(`
+    <div class="sheet-grip"></div>
+    <div class="sheet-head"><h3>App password</h3><button class="x" onclick="closeSheet()">${IC.x}</button></div>
+    <div class="sheet-body">
+      <div class="field"><label>New password</label><input id="sp_pw" type="password" autocomplete="new-password" placeholder="At least 8 characters"></div>
+      <div class="field"><label>Confirm password</label><input id="sp_pw2" type="password" autocomplete="new-password" placeholder="Same again"></div>
+      <p style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.5;padding:2px 4px 0">Adds a password to this same account (${esc(App.user&&App.user.email?App.user.email:'your email')}) so the installed app can use Email sign-in.</p>
+    </div>
+    <div class="confirm-actions"><button class="btn-cancel" onclick="closeSheet()">Cancel</button><button class="btn-confirm" onclick="setAppPassword()">Save</button></div>`);
+}
+async function setAppPassword(){
+  const u=firebase.auth().currentUser; if(!u){ toast('Connect with Google first'); return; }
+  const pw=document.getElementById('sp_pw').value||'';
+  const pw2=document.getElementById('sp_pw2').value||'';
+  if(pw.length<8){ toast('Use at least 8 characters'); return; }
+  if(pw!==pw2){ toast('Passwords do not match'); return; }
+  try{
+    await u.linkWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,pw));
+    closeSheet(); toast('App password set');
+  }catch(e){
+    if(e.code==='auth/provider-already-linked'){
+      try{ await u.updatePassword(pw); closeSheet(); toast('App password updated'); return; }catch(e2){ e=e2; }
+    }
+    if(e.code==='auth/requires-recent-login'){ toast('Sign out, reconnect with Google, then set the password'); return; }
+    if(e.code==='auth/operation-not-allowed'){ toast('Email sign-in is not enabled in Firebase yet'); return; }
+    toast('Could not set password: '+(e.code||e.message||'error'));
+  }
 }
 function subscribeLive(){
   unsubAll(); if(!db) db=firebase.firestore();
