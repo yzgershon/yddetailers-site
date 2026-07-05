@@ -947,7 +947,14 @@ function initSlider(){
   window.addEventListener('pointerup',()=>drag=false);
 }
 
-function registerSW(){ if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){} } }
+function registerSW(){
+  if(!('serviceWorker' in navigator)) return;
+  try{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    let refreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(refreshing) return; refreshing=true; location.reload(); });
+  }catch(e){}
+}
 
 function applyHash(){
   const h=(location.hash||'').replace('#',''); if(!h) return; const [k,v]=h.split('=');
