@@ -909,14 +909,38 @@ function openSettings(){
     </div>`);
 }
 function fbInit(){ if(typeof firebase==='undefined') throw new Error('offline'); if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG); return firebase.firestore(); }
+function isIOS(){
+  return /iP(hone|ad|od)/.test(navigator.userAgent)
+    || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);   // iPadOS reports as Mac
+}
 async function connectLive(){
   try{
     db=fbInit();
     const provider=new firebase.auth.GoogleAuthProvider();
+    // iOS Safari and installed home-screen apps block auth popups — use a full-page redirect there.
+    if(isIOS() || window.matchMedia('(display-mode: standalone)').matches){
+      localStorage.setItem('yd_source','live');   // optimistic; reverted if the redirect comes back empty
+      closeSheet();
+      await firebase.auth().signInWithRedirect(provider);
+      return;   // page navigates to Google; result is handled by finishRedirect() on return
+    }
     await firebase.auth().signInWithPopup(provider);
     App.user=firebase.auth().currentUser; App.source='live'; localStorage.setItem('yd_source','live');
     subscribeLive(); closeSheet(); toast('Connected to live CRM');
-  }catch(e){ toast('Sign-in failed: '+(e.code||e.message||'error')); }
+  }catch(e){
+    // Some browsers block the popup even on desktop — fall back to redirect rather than fail.
+    if(/popup/.test((e&&e.code)||'')){
+      try{ localStorage.setItem('yd_source','live'); await firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider()); return; }catch(_){}
+    }
+    toast('Sign-in failed: '+(e.code||e.message||'error'));
+  }
+}
+function finishRedirect(){
+  if(typeof firebase==='undefined') return;
+  try{ if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG); }catch(e){ return; }
+  firebase.auth().getRedirectResult().then(r=>{
+    if(r && r.user){ db=firebase.firestore(); App.user=r.user; App.source='live'; localStorage.setItem('yd_source','live'); subscribeLive(); toast('Connected to live CRM'); }
+  }).catch(e=>{ localStorage.setItem('yd_source','seed'); toast('Sign-in failed: '+(e.code||e.message||'error')); });
 }
 function subscribeLive(){
   unsubAll(); if(!db) db=firebase.firestore();
@@ -976,6 +1000,7 @@ function boot(){
   setTab('jobs');
   registerSW();
   loadPhotoKeys();
+  finishRedirect();
   if(localStorage.getItem('yd_source')==='live') tryResumeLive();
   window.addEventListener('hashchange',applyHash);
   applyHash();
