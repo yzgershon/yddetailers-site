@@ -7,7 +7,7 @@
 const FB_CONFIG = { apiKey:"AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E", authDomain:"yddetailers.firebaseapp.com", projectId:"yddetailers" };
 let db = null;
 
-const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, _unsub:[], photoKeys:new Set(), _dismissReconcile:false };
+const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, mediaMode:'photo', _unsub:[], photoKeys:new Set(), _dismissReconcile:false };
 
 const SERVICES = [
   {id:'exterior', name:'Premium Exterior Detail', cat:'ext',  prices:{Sedan:90,  SUV:100, Truck:120}},
@@ -58,6 +58,9 @@ const IC = {
   camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M8 6l1.2-2.2A2 2 0 0 1 11 3h2a2 2 0 0 1 1.8 1L16 6" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2"/></svg>',
   cloud:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 18 18z" stroke-linejoin="round"/></svg>',
   swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4L3 8l4 4M3 8h13M17 20l4-4-4-4M21 16H8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3" stroke-linejoin="round"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9l.8-12" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke-linecap="round"/></svg>',
   gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke-linecap="round"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>',
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>',
@@ -242,6 +245,7 @@ function heroCard(j, mode){
   const live = !recent && s==='progress';
   let badge, elapsed, cta;
   if(recent){ badge=`<span class="live-pill" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.88)"><span class="rec" style="animation:none;background:#7fd6a6"></span>Last detail</span>`; elapsed=fmtDateShort(j.date); cta='View'; }
+  else if(mode==='week'){ badge=`<span class="live-pill"><span class="rec" style="animation:none"></span>This week</span>`; elapsed=dowName(j.date).slice(0,3)+' · '+fmtTime(j.time); cta='View'; }
   else if(live){ badge=`<span class="live-pill"><span class="rec"></span>In progress</span>`; elapsed='Started '+Math.max(1,Math.round((Date.now()-j.startedAt)/60000))+' min ago'; cta='Continue'; }
   else { badge=`<span class="live-pill"><span class="rec"></span>Next up</span>`; elapsed=fmtTime(j.time); cta='Start job'; }
   return `<div class="hero-job" data-anim style="--i:3" onclick="openJob('${j.id}')">
@@ -310,7 +314,21 @@ function recentDayView(){
     <div class="chip"><span class="ic tint-b">${IC.check}</span><div><div class="k">${weekDone.length}</div><div class="l">jobs this wk</div></div></div>
     <div class="chip"><span class="ic tint-c">${IC.alert}</span><div><div class="k">${collectN}</div><div class="l">to collect</div></div></div>
   </div>`;
-  h += `<div class="today-note" data-anim style="--i:2"><span class="ic">${IC.cal}</span><div><div class="tn-h">No details scheduled today</div><div class="tn-s">Enjoy the day off. Here's your recent work.</div></div></div>`;
+  const upWeek = App.jobs.filter(j=>statusOf(j)==='upcoming' && j.date>T && j.date<=addDays(ws,6)).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  if(upWeek.length){
+    h += `<div class="today-note" data-anim style="--i:2"><span class="ic">${IC.cal}</span><div><div class="tn-h">No details today</div><div class="tn-s">Next one is ${dowName(upWeek[0].date)}. Here's what's coming up.</div></div></div>`;
+    h += heroCard(upWeek[0],'week');
+    if(upWeek.length>1){
+      h += `<div class="section-label" data-anim style="--i:4"><h3>Also this week</h3><span class="more">${upWeek.length-1} more</span></div>`;
+      upWeek.slice(1).forEach((j,i)=> h+=jobCard(j,5+i));
+    }
+    if(recent.length){
+      h += `<div class="section-label" data-anim style="--i:7"><h3>Recent work</h3></div>`;
+      recent.slice(0,3).forEach((j,i)=> h+=jobCard(j,8+i,true));
+    }
+    return h;
+  }
+  h += `<div class="today-note" data-anim style="--i:2"><span class="ic">${IC.cal}</span><div><div class="tn-h">No details scheduled today</div><div class="tn-s">Nothing else this week. Here's your recent work.</div></div></div>`;
   if(recent[0]) h += heroCard(recent[0],'recent');
   if(recent.length>1){
     h += `<div class="section-label" data-anim style="--i:4"><h3>Recent work</h3><span class="more">last ${recent.length-1}</span></div>`;
@@ -475,18 +493,25 @@ const ANGLES = [
   {id:'interior',name:'Interior', hint:'Front seats and dash in frame', interior:true},
 ];
 
-function jobPhotoStatus(jobId){ let b=0,a=0; App.photoKeys.forEach(k=>{ const p=k.split('|'); if(p[0]===jobId){ if(p[2]==='before')b++; else if(p[2]==='after')a++; } }); return {before:b,after:a}; }
+function jobPhotoStatus(jobId){ let b=0,a=0; App.photoKeys.forEach(k=>{ const p=k.split('|'); if(p[0]===jobId && p[1]!=='video'){ if(p[2]==='before')b++; else if(p[2]==='after')a++; } }); return {before:b,after:a}; }
+function jobVideoStatus(jobId){ return { before:App.photoKeys.has(jobId+'|video|before'), after:App.photoKeys.has(jobId+'|video|after') }; }
 function findFeaturedPair(){
-  const m={}; App.photoKeys.forEach(k=>{ const [jid,ang,ph]=k.split('|'); const kk=jid+'|'+ang; (m[kk]=m[kk]||{})[ph]=true; });
+  const m={}; App.photoKeys.forEach(k=>{ const [jid,ang,ph]=k.split('|'); if(ang==='video') return; const kk=jid+'|'+ang; (m[kk]=m[kk]||{})[ph]=true; });
   const cands=Object.keys(m).filter(kk=>m[kk].before&&m[kk].after);
   if(!cands.length) return null;
   let best=null;
   cands.forEach(kk=>{ const [jid,ang]=kk.split('|'); const j=jobById(jid); const d=j?j.date:''; if(!best||d>best.date){ best={jobId:jid,angle:ang,date:d,job:j}; } });
   return best;
 }
+function setMediaMode(m){ App.mediaMode=m; renderPhotos(); }
 function renderPhotos(){
   const el=document.getElementById('s-photos'); const T=todayISO();
   let h = topbar('Portfolio','Gallery');
+  const vid = App.mediaMode==='video';
+  h += `<div class="seg" data-anim style="--i:1"><span class="glider" style="transform:translateX(${vid?'100%':'0'})"></span>
+    <button class="${vid?'':'on'}" onclick="setMediaMode('photo')">Photos</button>
+    <button class="${vid?'on':''}" onclick="setMediaMode('video')">Videos</button></div>`;
+  if(vid){ renderVideosView(el,h,T); return; }
   const pair = findFeaturedPair();
   if(pair){
     const j=pair.job; const ang=ANGLES.find(a=>a.id===pair.angle);
@@ -536,17 +561,60 @@ async function loadThumbs(jobs){
   }
 }
 
+function renderVideosView(el,h,T){
+  const withVids = App.jobs.filter(j=>{ const s=jobVideoStatus(j.id); return s.before||s.after; }).sort((a,b)=>(b.date).localeCompare(a.date));
+  const feat = withVids.find(j=>{ const s=jobVideoStatus(j.id); return s.before&&s.after; });
+  if(feat){
+    h += `<div class="badge" data-anim style="--i:2">${IC.video}Latest before / after</div>
+      <div class="vid-pair" data-anim style="--i:3">
+        <div class="vid-cell"><video id="vidBefore" controls playsinline preload="metadata"></video><span class="ba-tag b">Before</span></div>
+        <div class="vid-cell"><video id="vidAfter" controls playsinline preload="metadata"></video><span class="ba-tag a">After</span></div>
+      </div>
+      <div class="ba-caption vc" data-anim style="--i:4"><div><div class="cn">${esc(feat.name)}</div><div class="cs">${esc(feat.service)}</div></div><div class="cd">${feat.date===T?'Today':fmtDateShort(feat.date)}</div></div>`;
+  } else if(withVids.length){
+    h += `<div class="badge" data-anim style="--i:2">${IC.video}Before / after videos</div>
+      <div class="today-note" data-anim style="--i:3"><span class="ic">${IC.video}</span><div><div class="tn-h">One side is missing</div><div class="tn-s">Shoot the matching before or after walkaround to complete the pair.</div></div></div>`;
+  } else {
+    h += `<div class="badge" data-anim style="--i:2">${IC.video}Before / after videos</div>
+      <div class="today-note" data-anim style="--i:3"><span class="ic">${IC.video}</span><div><div class="tn-h">No videos yet</div><div class="tn-s">Open a job below and film the before walkaround. After the detail, film the after.</div></div></div>`;
+  }
+  const todays=App.jobs.filter(j=>j.date===T && statusOf(j)!=='cancelled');
+  const recent=App.jobs.filter(j=>j.status==='completed').sort((a,b)=>(b.date).localeCompare(a.date)).slice(0,10);
+  const seen=new Set(); const jobs=[];
+  todays.concat(recent).forEach(j=>{ if(!seen.has(j.id)){ seen.add(j.id); jobs.push(j); } });
+  h += `<div class="section-label" data-anim style="--i:4"><h3>Record</h3><span class="more">${jobs.length} job${jobs.length!==1?'s':''}</span></div>`;
+  if(jobs.length===0){ h += emptyState(IC.video,'No jobs to film','Add a job first, then record its before/after here.','Add a job','onFab()'); el.innerHTML=h; return; }
+  jobs.forEach((j,i)=>{
+    const s=jobVideoStatus(j.id); let pc='none', pt='Not started';
+    if(s.before&&s.after){ pc='done'; pt='Complete'; }
+    else if(s.before){ pc='part'; pt='Before done'; }
+    else if(s.after){ pc='part'; pt='After only'; }
+    h += `<button class="pjob" data-anim style="--i:${5+Math.min(i,8)}" onclick="openCamera('${j.id}')">
+      <div class="pj-thumb"><div class="pj-ph">${IC.video}</div></div>
+      <div class="pj-main"><div class="pj-n">${esc(j.name)}</div><div class="pj-s">${esc(j.vehicle)}</div><span class="pj-prog ${pc}">${pc==='done'?IC.check:''}${pt}</span></div>
+      <div class="pj-cam">${IC.video}</div></button>`;
+  });
+  el.innerHTML=h;
+  if(feat) loadFeaturedVids(feat.id);
+}
+async function loadFeaturedVids(jobId){
+  const b=await photoGet(jobId+'|video|before'), a=await photoGet(jobId+'|video|after');
+  const be=document.getElementById('vidBefore'), ae=document.getElementById('vidAfter');
+  if(be&&b) be.src=URL.createObjectURL(b);
+  if(ae&&a) ae.src=URL.createObjectURL(a);
+}
+
 /* ============================================================
    CAMERA CAPTURE  (before/after with angle guidance)
    ============================================================ */
-const Cam = { jobId:null, angleIdx:0, phase:'before', stream:null, frozen:null };
+const Cam = { jobId:null, angleIdx:0, phase:'before', mode:'photo', stream:null, frozen:null };
 function openCamera(jobId){
   const j=jobById(jobId); if(!j) return;
-  Cam.jobId=jobId; Cam.phase='before'; Cam.frozen=null;
+  Cam.jobId=jobId; Cam.phase='before'; Cam.frozen=null; Cam.mode=App.mediaMode;
   const first=ANGLES.findIndex(a=>!App.photoKeys.has(jobId+'|'+a.id+'|before')); Cam.angleIdx=first>=0?first:0;
   buildCameraUI(j);
   document.getElementById('cameraView').classList.add('open');
-  startCam(); refreshCam();
+  refreshCam();
 }
 function buildCameraUI(j){
   document.getElementById('cameraView').innerHTML = `
@@ -564,10 +632,20 @@ function buildCameraUI(j){
       <div class="cam-hint" id="camHint"></div>
       <div class="cam-nocam" id="camNoCam" style="display:none">${IC.camera}<div>Live camera isn't available here.<br>On your phone this shows the live view.</div>
         <label class="cn-btn">${IC.camera}<span>Pick / take a photo</span><input type="file" accept="image/*" capture="environment" style="display:none" onchange="onCamFile(this)"></label></div>
+      <div class="cam-vid" id="camVidPanel" style="display:none"></div>
+      <div class="cam-mode" id="camMode">
+        <button id="camModeP" class="on" onclick="setCamMode('photo')">${IC.camera}Photo</button>
+        <button id="camModeV" onclick="setCamMode('video')">${IC.video}Video</button>
+      </div>
+      <div class="cam-confirm" id="camConfirm" style="display:none">
+        <div class="cc-box"><div class="cc-t" id="camConfirmMsg">Delete this?</div>
+        <div class="cc-btns"><button class="cc-no" onclick="hideCamConfirm()">Cancel</button><button class="cc-yes" onclick="camDeleteYes()">Delete</button></div></div>
+      </div>
     </div>
+    <input type="file" accept="video/*" capture="environment" id="camVidInput" style="display:none" onchange="onVidFile(this)">
     <div class="cam-angles" id="camAngles"></div>
     <div class="cam-controls" id="camControls">
-      <button class="cam-side" onclick="closeCamera()" aria-label="Gallery">${IC.camera}</button>
+      <button class="cam-side trash" id="camTrash" onclick="camDelete()" aria-label="Delete" style="visibility:hidden">${IC.trash}</button>
       <button class="cam-shutter" id="camShutter" onclick="capturePhoto()" aria-label="Shutter"></button>
       <button class="cam-side hidden"></button>
     </div>
@@ -586,18 +664,77 @@ async function startCam(){
 }
 function stopCam(){ if(Cam.stream){ Cam.stream.getTracks().forEach(t=>t.stop()); Cam.stream=null; } }
 function refreshCam(){
-  renderCamAngles();
-  const ang=ANGLES[Cam.angleIdx]; const aft=Cam.phase==='after';
+  const aft=Cam.phase==='after'; const vid=Cam.mode==='video';
   document.getElementById('camPhaseB').className = aft?'':'on';
   document.getElementById('camPhaseA').className = aft?'on aft':'';
-  const hint=document.getElementById('camHint'); hint.className='cam-hint'+(aft?' aft':'');
+  document.getElementById('camModeP').className = vid?'':'on';
+  document.getElementById('camModeV').className = vid?'on':'';
+  document.getElementById('camShutter').className='cam-shutter'+(aft?' aft':'')+(vid?' vid':'');
+  Cam.frozen=null; document.getElementById('camFrozen').style.display='none';
+  document.getElementById('camReview').className='cam-review'; document.getElementById('camControls').style.display='flex';
+  hideCamConfirm();
+  const hint=document.getElementById('camHint');
+  if(vid){
+    stopCam();
+    document.getElementById('camVideo').style.display='none';
+    document.getElementById('camNoCam').style.display='none';
+    document.getElementById('camAngles').style.display='none';
+    document.getElementById('camGuide').style.display='none';
+    document.querySelector('#cameraView .cam-grid').style.display='none';
+    const g=document.getElementById('camGhost'); g.style.display='none'; g.removeAttribute('src');
+    hint.style.display='none';
+    document.getElementById('camVidPanel').style.display='flex';
+    renderVidPanel();
+    return;
+  }
+  document.getElementById('camVidPanel').style.display='none';
+  document.getElementById('camAngles').style.display='flex';
+  document.querySelector('#cameraView .cam-grid').style.display='';
+  hint.style.display='flex';
+  renderCamAngles();
+  const ang=ANGLES[Cam.angleIdx];
+  hint.className='cam-hint'+(aft?' aft':'');
   hint.innerHTML = (aft?IC.swap:IC.target)+'<span>'+(aft?'Match the ghosted before shot':ang.hint)+'</span>';
   document.getElementById('camGuide').innerHTML = ang.interior?IC.wheel:IC.carLine;
-  document.getElementById('camShutter').className='cam-shutter'+(aft?' aft':'');
   document.getElementById('camUse').className='cam-use'+(aft?' aft':'');
-  Cam.frozen=null; const fr=document.getElementById('camFrozen'); fr.style.display='none';
-  document.getElementById('camReview').className='cam-review'; document.getElementById('camControls').style.display='flex';
+  if(!Cam.stream) startCam();
+  else { document.getElementById('camVideo').style.display='block'; }
+  updateCamTrash();
   loadGhost();
+}
+function setCamMode(m){ Cam.mode=m; App.mediaMode=m; refreshCam(); }
+function updateCamTrash(){
+  const key = Cam.mode==='video' ? Cam.jobId+'|video|'+Cam.phase : Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|'+Cam.phase;
+  document.getElementById('camTrash').style.visibility = App.photoKeys.has(key)?'visible':'hidden';
+}
+async function renderVidPanel(){
+  const p=document.getElementById('camVidPanel'); const aft=Cam.phase==='after';
+  updateCamTrash();
+  const blob=await photoGet(Cam.jobId+'|video|'+Cam.phase);
+  if(Cam.mode!=='video') return;
+  if(blob){
+    p.innerHTML=`<video src="${URL.createObjectURL(blob)}" controls playsinline preload="metadata"></video>
+      <div class="cv-cap">${aft?'After':'Before'} walkaround saved. Shutter re-records, trash deletes.</div>`;
+  } else {
+    p.innerHTML=`<div class="cv-empty">${IC.video}
+      <div class="cv-h">Film the ${aft?'after':'before'} walkaround</div>
+      <div class="cv-s">Tap the shutter to open your camera. Walk slowly around the car${aft?', same direction as the before video':', one steady lap'}.</div></div>`;
+  }
+}
+function hideCamConfirm(){ const c=document.getElementById('camConfirm'); if(c) c.style.display='none'; }
+function camDelete(){
+  const vid=Cam.mode==='video';
+  const label = vid ? (Cam.phase+' video') : (Cam.phase+' photo · '+ANGLES[Cam.angleIdx].name);
+  document.getElementById('camConfirmMsg').textContent='Delete the '+label+'?';
+  document.getElementById('camConfirm').style.display='grid';
+}
+async function camDeleteYes(){
+  const vid=Cam.mode==='video';
+  const key = vid ? Cam.jobId+'|video|'+Cam.phase : Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|'+Cam.phase;
+  try{ await photoDel(key); toast('Deleted'); }catch(e){ toast('Could not delete'); }
+  hideCamConfirm();
+  if(vid) renderVidPanel(); else { renderCamAngles(); updateCamTrash(); loadGhost(); }
+  renderPhotos();
 }
 function renderCamAngles(){
   document.getElementById('camAngles').innerHTML = ANGLES.map((a,i)=>{
@@ -627,9 +764,19 @@ function showFrozen(data){
   document.getElementById('camControls').style.display='none'; document.getElementById('camReview').className='cam-review show';
 }
 function capturePhoto(){
+  if(Cam.mode==='video'){ document.getElementById('camVidInput').click(); return; }
   const v=document.getElementById('camVideo');
   if(!Cam.stream || !v.videoWidth){ const inp=document.querySelector('#camNoCam input'); if(inp) inp.click(); return; }
   showFrozen(frameToDataURL(v));
+}
+async function onVidFile(input){
+  const f=input.files&&input.files[0]; input.value=''; if(!f) return;
+  const key=Cam.jobId+'|video|'+Cam.phase;
+  try{
+    await photoPut(key,f); App.photoKeys.add(key);
+    toast((Cam.phase==='before'?'Before':'After')+' video saved');
+  }catch(e){ toast('Could not save video (storage full?)'); }
+  renderVidPanel(); renderPhotos();
 }
 function onCamFile(input){
   const f=input.files&&input.files[0]; if(!f) return; const url=URL.createObjectURL(f); const img=new Image();
@@ -656,6 +803,7 @@ function idb(){ return new Promise((res,rej)=>{ if(_idb) return res(_idb); if(!(
   r.onsuccess=()=>{ _idb=r.result; res(_idb); }; r.onerror=()=>rej(r.error); }); }
 function photoPut(key,val){ return idb().then(d=>new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite'); t.objectStore('photos').put(val,key); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); })); }
 function photoGet(key){ return idb().then(d=>new Promise(res=>{ const t=d.transaction('photos','readonly'); const rq=t.objectStore('photos').get(key); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); })).catch(()=>null); }
+function photoDel(key){ return idb().then(d=>new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite'); t.objectStore('photos').delete(key); t.oncomplete=()=>{ App.photoKeys.delete(key); res(); }; t.onerror=()=>rej(t.error); })); }
 function loadPhotoKeys(){ idb().then(d=>{ const t=d.transaction('photos','readonly'); const rq=t.objectStore('photos').getAllKeys(); rq.onsuccess=()=>{ App.photoKeys=new Set((rq.result||[]).map(String)); if(App.tab==='photos') renderPhotos(); }; }).catch(()=>{}); }
 
 /* ============================================================
@@ -1059,6 +1207,9 @@ function applyHash(){
   else if(k==='newclient'){ setTab('clients'); openClientForm(); }
   else if(k==='pay'&&v){ setTab('jobs'); methodSheet(v,true); }
   else if(k==='camera'&&v){ setTab('photos'); openCamera(v); }
+  else if(k==='videos'){ App.mediaMode='video'; setTab('photos'); }
+  else if(k==='camvid'&&v){ App.mediaMode='video'; setTab('photos'); openCamera(v); }
+  else if(k==='dayoff'){ const T=todayISO(); App.jobs.forEach(j=>{ if(j.date===T){ j.date = j.status==='completed' ? addDays(T,-1) : addDays(T, v==='far'?9:2); } }); renderAll(); setTab('jobs'); }
 }
 
 /* ---------- boot ---------- */

@@ -472,6 +472,38 @@ input,select,textarea{font-family:inherit;}
 .cam-use{background:var(--green);color:#fff;}
 .cam-use.aft{background:var(--orange);}
 
+/* camera: photo/video mode + video panel + delete */
+.cam-mode{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(10,10,12,.62);backdrop-filter:blur(8px);border-radius:999px;padding:3px;z-index:6;}
+.cam-mode button{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-weight:700;font-size:12px;color:rgba(255,255,255,.65);transition:all .2s;}
+.cam-mode button svg{width:15px;height:15px;}
+.cam-mode button.on{background:#fff;color:#1a1a1a;}
+.cam-vid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b0b0d;padding:18px 18px 64px;gap:10px;}
+.cam-vid video{max-width:100%;max-height:100%;min-height:0;flex:1;border-radius:16px;background:#000;}
+.cam-vid .cv-cap{font-size:12px;font-weight:700;color:rgba(255,255,255,.6);text-align:center;}
+.cam-vid .cv-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:0 26px;color:rgba(255,255,255,.85);}
+.cam-vid .cv-empty svg{width:52px;height:52px;color:rgba(255,255,255,.4);}
+.cam-vid .cv-h{font-family:var(--font-d);font-weight:600;font-size:18px;}
+.cam-vid .cv-s{font-size:13px;font-weight:600;color:rgba(255,255,255,.55);line-height:1.5;}
+.cam-shutter.vid{background:radial-gradient(circle,#E5484D 38%,#fff 40%);}
+.cam-side.trash{background:rgba(229,72,77,.22);}
+.cam-side.trash svg{color:#FF8A8E;}
+.cam-confirm{position:absolute;inset:0;z-index:8;background:rgba(10,10,12,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:30px;}
+.cc-box{background:#1c1c20;border-radius:20px;padding:22px;max-width:300px;width:100%;text-align:center;}
+.cc-t{font-family:var(--font-d);font-weight:600;font-size:16px;margin-bottom:16px;text-transform:none;}
+.cc-btns{display:flex;gap:10px;}
+.cc-btns button{flex:1;padding:13px;border-radius:13px;font-family:var(--font-d);font-weight:600;font-size:14px;}
+.cc-no{background:rgba(255,255,255,.12);color:#fff;}
+.cc-yes{background:#E5484D;color:#fff;}
+
+/* videos gallery */
+.vid-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.vid-cell{position:relative;aspect-ratio:9/14;border-radius:18px;overflow:hidden;background:#141210;box-shadow:var(--sh-md);}
+.vid-cell video{width:100%;height:100%;object-fit:contain;background:#141210;display:block;}
+.vid-cell .ba-tag{pointer-events:none;}
+.vid-cell .ba-tag.b{left:10px;}
+.vid-cell .ba-tag.a{right:10px;}
+.ba-caption.vc{border-radius:var(--r-lg);border-top:1px solid var(--line-2);margin-top:10px;}
+
 /* job form: vehicle type + service tiles + add-ons */
 .vtype{display:flex;gap:8px;}
 .vtype button{flex:1;padding:11px 6px;border-radius:12px;background:var(--surface);border:1.5px solid var(--line);font-weight:700;font-size:13.5px;color:var(--muted);transition:all .15s;}
