@@ -7,7 +7,7 @@
 const FB_CONFIG = { apiKey:"AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E", authDomain:"yddetailers.firebaseapp.com", projectId:"yddetailers", storageBucket:"yddetailers.firebasestorage.app" };
 let db = null;
 
-const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, mediaMode:'photo', _unsub:[], photoKeys:new Set(), cloudMedia:new Map(), _dismissReconcile:false };
+const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, mediaMode:'photo', _unsub:[], photoKeys:new Set(), cloudMedia:new Map(), pendingDel:new Set(), _dismissReconcile:false };
 
 const SERVICES = [
   {id:'exterior', name:'Premium Exterior Detail', cat:'ext',  prices:{Sedan:90,  SUV:100, Truck:120}},
@@ -494,15 +494,17 @@ const ANGLES = [
   {id:'interior',name:'Interior', hint:'Front seats and dash in frame', interior:true},
 ];
 
-/* local + cloud media, merged */
-function mediaKeys(){ const s=new Set(App.photoKeys); App.cloudMedia.forEach((v,k)=>s.add(k)); return s; }
-function hasMedia(key){ return App.photoKeys.has(key) || App.cloudMedia.has(key); }
+/* local + cloud media, merged (keys queued for deletion are treated as gone) */
+function mediaKeys(){ const s=new Set(App.photoKeys); App.cloudMedia.forEach((v,k)=>s.add(k)); App.pendingDel.forEach(k=>s.delete(k)); return s; }
+function hasMedia(key){ return !App.pendingDel.has(key) && (App.photoKeys.has(key) || App.cloudMedia.has(key)); }
 async function mediaURL(key){
+  if(App.pendingDel.has(key)) return null;
   const v=await photoGet(key);
   if(v) return (v instanceof Blob) ? URL.createObjectURL(v) : v;
   const cm=App.cloudMedia.get(key); return cm ? cm.url : null;
 }
 async function mediaBlob(key){
+  if(App.pendingDel.has(key)) return null;
   const v=await photoGet(key);
   if(v) return (v instanceof Blob) ? v : await (await fetch(v)).blob();
   const cm=App.cloudMedia.get(key); if(!cm) return null;
@@ -761,8 +763,7 @@ function camDelete(){
 async function camDeleteYes(){
   const vid=Cam.mode==='video';
   const key = vid ? Cam.jobId+'|video|'+Cam.phase : Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|'+Cam.phase;
-  try{ await photoDel(key); await cloudDelete(key); toast('Deleted'); }catch(e){ toast('Could not delete'); }
-  upQueueSet(upQueue().filter(k=>k!==key));
+  try{ await deleteMedia(key); toast('Deleted'); }catch(e){ toast('Could not delete'); }
   hideCamConfirm();
   if(vid) renderVidPanel(); else { renderCamAngles(); updateCamTrash(); loadGhost(); }
   renderPhotos();
@@ -804,7 +805,7 @@ async function onVidFile(input){
   const f=input.files&&input.files[0]; input.value=''; if(!f) return;
   const key=Cam.jobId+'|video|'+Cam.phase;
   try{
-    await photoPut(key,f); App.photoKeys.add(key);
+    await photoPut(key,f); App.photoKeys.add(key); clearPendingDelete(key);
     toast((Cam.phase==='before'?'Before':'After')+' video saved');
     queueUpload(key);
   }catch(e){ toast('Could not save video (storage full?)'); }
@@ -820,7 +821,7 @@ function retakePhoto(){ Cam.frozen=null; document.getElementById('camFrozen').st
 async function usePhoto(){
   if(!Cam.frozen) return;
   const ang=ANGLES[Cam.angleIdx]; const key=Cam.jobId+'|'+ang.id+'|'+Cam.phase;
-  try{ await photoPut(key,Cam.frozen); App.photoKeys.add(key); toast((Cam.phase==='before'?'Before':'After')+' · '+ang.name+' saved'); queueUpload(key); }
+  try{ await photoPut(key,Cam.frozen); App.photoKeys.add(key); clearPendingDelete(key); toast((Cam.phase==='before'?'Before':'After')+' · '+ang.name+' saved'); queueUpload(key); }
   catch(e){ toast('Could not save photo'); }
   const next=ANGLES.findIndex((a,i)=>i>Cam.angleIdx && !App.photoKeys.has(Cam.jobId+'|'+a.id+'|'+Cam.phase));
   if(next>=0) Cam.angleIdx=next;
@@ -848,9 +849,30 @@ function canUpload(){ return App.source==='live' && typeof firebase!=='undefined
 function upQueue(){ try{ return JSON.parse(localStorage.getItem('yd_upq')||'[]'); }catch(e){ return []; } }
 function upQueueSet(q){ localStorage.setItem('yd_upq', JSON.stringify(Array.from(new Set(q)))); }
 function queueUpload(key){
+  clearPendingDelete(key);
   if(canUpload()){ doUpload(key); return; }
   upQueueSet(upQueue().concat([key]));
   toast('Saved on phone. Uploads when connected to live.');
+}
+
+/* pending cloud deletions — durable across offline windows and reloads, retried on reconnect */
+function delQueueLoad(){ try{ App.pendingDel=new Set(JSON.parse(localStorage.getItem('yd_delq')||'[]')); }catch(e){ App.pendingDel=new Set(); } }
+function delQueueSave(){ localStorage.setItem('yd_delq', JSON.stringify(Array.from(App.pendingDel))); }
+function markPendingDelete(key){ App.pendingDel.add(key); delQueueSave(); }
+function clearPendingDelete(key){ if(App.pendingDel.delete(key)) delQueueSave(); }
+async function deleteMedia(key){
+  markPendingDelete(key);                     // hide it now + remember to purge from cloud
+  upQueueSet(upQueue().filter(k=>k!==key));    // cancel any queued upload of the same key
+  try{ await photoDel(key); }catch(e){}        // drop the on-phone copy
+  if(canUpload()){
+    cloudDelete(key).then(ok=>{ if(ok){ clearPendingDelete(key); if(App.tab==='photos') renderPhotos(); } });
+  }
+}
+function processPendingDeletes(){
+  if(!canUpload() || !App.pendingDel.size) return;
+  Array.from(App.pendingDel).reduce((p,key)=>p.then(async()=>{
+    const ok=await cloudDelete(key); if(ok) clearPendingDelete(key);
+  }), Promise.resolve()).then(()=>{ if(App.tab==='photos') renderPhotos(); });
 }
 async function doUpload(key){
   try{
@@ -889,11 +911,20 @@ function processPendingUploads(){
   q.reduce((p,key)=>p.then(()=>doUpload(key)), Promise.resolve());
 }
 async function cloudDelete(key){
-  if(!canUpload()) return;
-  const cm=App.cloudMedia.get(key); if(!cm) return;
-  try{ await firebase.storage().ref(cm.path).delete(); }catch(e){}
-  try{ await db.collection('media').doc(key.replace(/\|/g,'_')).delete(); }catch(e){}
-  App.cloudMedia.delete(key);
+  // returns true when the cloud copy is confirmed gone (or was never there), false if it must be retried
+  if(!canUpload()) return false;
+  const docId=key.replace(/\|/g,'_');
+  try{
+    let path=(App.cloudMedia.get(key)||{}).path;
+    if(!path){ try{ const s=await db.collection('media').doc(docId).get(); if(s&&s.exists) path=(s.data()||{}).path; }catch(e){} }
+    if(path){
+      try{ await firebase.storage().ref(path).delete(); }
+      catch(e){ if(!(e&&e.code==='storage/object-not-found')) throw e; }
+    }
+    await db.collection('media').doc(docId).delete();
+    App.cloudMedia.delete(key);
+    return true;
+  }catch(e){ return false; }
 }
 function loadPhotoKeys(){ idb().then(d=>{ const t=d.transaction('photos','readonly'); const rq=t.objectStore('photos').getAllKeys(); rq.onsuccess=()=>{ App.photoKeys=new Set((rq.result||[]).map(String)); if(App.tab==='photos') renderPhotos(); }; }).catch(()=>{}); }
 
@@ -1258,6 +1289,7 @@ function subscribeLive(){
     if(App.tab==='photos') renderPhotos();
   }, e=>{}));
   processPendingUploads();
+  processPendingDeletes();
 }
 function unsubAll(){ App._unsub.forEach(u=>{try{u();}catch(e){}}); App._unsub=[]; }
 function disconnectLive(){ unsubAll(); try{ firebase.auth().signOut(); }catch(e){} App.cloudMedia=new Map(); App.source='seed'; localStorage.setItem('yd_source','seed'); loadSeed(); closeSheet(); toast('Switched to local mode'); }
@@ -1313,6 +1345,7 @@ function boot(){
   loadSeed();
   setTab('jobs');
   registerSW();
+  delQueueLoad();
   loadPhotoKeys();
   finishRedirect();
   if(localStorage.getItem('yd_source')==='live') tryResumeLive();
