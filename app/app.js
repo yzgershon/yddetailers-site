@@ -7,7 +7,7 @@
 const FB_CONFIG = { apiKey:"AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E", authDomain:"yddetailers.firebaseapp.com", projectId:"yddetailers", storageBucket:"yddetailers.firebasestorage.app" };
 let db = null;
 
-const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, mediaMode:'photo', _unsub:[], photoKeys:new Set(), cloudMedia:new Map(), _dismissReconcile:false };
+const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, mediaMode:'photo', _unsub:[], photoKeys:new Set(), cloudMedia:new Map(), deletedKeys:new Set(), _dismissReconcile:false };
 
 const SERVICES = [
   {id:'exterior', name:'Premium Exterior Detail', cat:'ext',  prices:{Sedan:90,  SUV:100, Truck:120}},
@@ -495,8 +495,16 @@ const ANGLES = [
 ];
 
 /* local + cloud media, merged */
-function mediaKeys(){ const s=new Set(App.photoKeys); App.cloudMedia.forEach((v,k)=>s.add(k)); return s; }
-function hasMedia(key){ return App.photoKeys.has(key) || App.cloudMedia.has(key); }
+/* Tombstones: a deleted key can NEVER show again, even if the local delete or the
+   cloud delete fails or a realtime snapshot re-arrives mid-propagation. Persisted. */
+function loadDelKeys(){ try{ App.deletedKeys=new Set(JSON.parse(localStorage.getItem('yd_del')||'[]')); }catch(e){ App.deletedKeys=new Set(); } }
+function saveDelKeys(){ try{ localStorage.setItem('yd_del', JSON.stringify(Array.from(App.deletedKeys))); }catch(e){} }
+function tombstone(key){ App.deletedKeys.add(key); saveDelKeys(); }
+function untombstone(key){ if(App.deletedKeys.delete(key)) saveDelKeys(); }
+function delQueue(){ try{ return JSON.parse(localStorage.getItem('yd_delq')||'[]'); }catch(e){ return []; } }
+function delQueueSet(q){ localStorage.setItem('yd_delq', JSON.stringify(Array.from(new Set(q)))); }
+function mediaKeys(){ const s=new Set(); App.photoKeys.forEach(k=>{ if(!App.deletedKeys.has(k)) s.add(k); }); App.cloudMedia.forEach((v,k)=>{ if(!App.deletedKeys.has(k)) s.add(k); }); return s; }
+function hasMedia(key){ if(App.deletedKeys.has(key)) return false; return App.photoKeys.has(key) || App.cloudMedia.has(key); }
 async function mediaURL(key){
   const v=await photoGet(key);
   if(v) return (v instanceof Blob) ? URL.createObjectURL(v) : v;
@@ -547,7 +555,7 @@ function renderPhotos(){
   const recent=App.jobs.filter(j=>j.status==='completed').sort((a,b)=>(b.date).localeCompare(a.date)).slice(0,10);
   const seen=new Set(); const jobs=[];
   todays.concat(recent).forEach(j=>{ if(!seen.has(j.id)){ seen.add(j.id); jobs.push(j); } });
-  h += `<div class="section-label" data-anim style="--i:3"><h3>Capture</h3><span class="more">${jobs.length} job${jobs.length!==1?'s':''}</span></div>`;
+  h += `<div class="section-label" data-anim style="--i:3"><h3>Capture</h3>${galleryKeys('photo').length?`<button class="clear-all" onclick="confirmClearAll()">${IC.trash}Delete all photos</button>`:`<span class="more">${jobs.length} job${jobs.length!==1?'s':''}</span>`}</div>`;
   if(jobs.length===0){ h += emptyState(IC.camera,'No jobs to shoot','Add a job first, then capture its before/after here.','Add a job','onFab()'); el.innerHTML=h; return; }
   jobs.forEach((j,i)=>{
     const st=jobPhotoStatus(j.id); let pc='none', pt='Not started';
@@ -597,7 +605,7 @@ function renderVideosView(el,h,T){
   const recent=App.jobs.filter(j=>j.status==='completed').sort((a,b)=>(b.date).localeCompare(a.date)).slice(0,10);
   const seen=new Set(); const jobs=[];
   todays.concat(recent).forEach(j=>{ if(!seen.has(j.id)){ seen.add(j.id); jobs.push(j); } });
-  h += `<div class="section-label" data-anim style="--i:4"><h3>Record</h3><span class="more">${jobs.length} job${jobs.length!==1?'s':''}</span></div>`;
+  h += `<div class="section-label" data-anim style="--i:4"><h3>Record</h3>${galleryKeys('video').length?`<button class="clear-all" onclick="confirmClearAll()">${IC.trash}Delete all videos</button>`:`<span class="more">${jobs.length} job${jobs.length!==1?'s':''}</span>`}</div>`;
   if(jobs.length===0){ h += emptyState(IC.video,'No jobs to film','Add a job first, then record its before/after here.','Add a job','onFab()'); el.innerHTML=h; return; }
   jobs.forEach((j,i)=>{
     const s=jobVideoStatus(j.id); let pc='none', pt='Not started';
@@ -758,13 +766,45 @@ function camDelete(){
   document.getElementById('camConfirmMsg').textContent='Delete the '+label+'?';
   document.getElementById('camConfirm').style.display='grid';
 }
+/* One reliable delete used everywhere. Order matters:
+   1) tombstone first  -> the item is treated as gone immediately, no matter what fails next
+   2) drop any pending upload
+   3) remove local copy (IndexedDB)
+   4) remove the cloud record; if that can't reach the server, queue it to retry later */
+async function deleteMedia(key){
+  tombstone(key);
+  upQueueSet(upQueue().filter(k=>k!==key));
+  try{ await photoDel(key); }catch(e){}
+  const ok = await cloudDelete(key);
+  if(!ok) delQueueSet(delQueue().concat([key]));   // retry the server delete on next connect
+}
 async function camDeleteYes(){
   const vid=Cam.mode==='video';
   const key = vid ? Cam.jobId+'|video|'+Cam.phase : Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|'+Cam.phase;
-  try{ await photoDel(key); await cloudDelete(key); toast('Deleted'); }catch(e){ toast('Could not delete'); }
-  upQueueSet(upQueue().filter(k=>k!==key));
+  await deleteMedia(key);
+  toast('Deleted');
   hideCamConfirm();
   if(vid) renderVidPanel(); else { renderCamAngles(); updateCamTrash(); loadGhost(); }
+  renderPhotos();
+}
+/* Delete-all: every photo (or every video) currently held, local + cloud. */
+function galleryKeys(mode){
+  const out=[]; mediaKeys().forEach(k=>{ const isVid=k.split('|')[1]==='video'; if(mode==='video'?isVid:!isVid) out.push(k); }); return out;
+}
+function confirmClearAll(){
+  const mode=App.mediaMode; const noun=mode==='video'?'video':'photo';
+  const keys=galleryKeys(mode);
+  if(!keys.length){ toast('Nothing to delete'); return; }
+  confirmSheet({ icon:IC.trash, tint:'tint-c', title:`Delete all ${noun}s?`,
+    msg:`This permanently removes ${keys.length} ${noun}${keys.length>1?'s':''} from this phone and the cloud. This can't be undone.`,
+    ok:`Delete ${keys.length} ${noun}${keys.length>1?'s':''}`, okClass:'danger', onOk:()=>clearAll(mode) });
+}
+async function clearAll(mode){
+  const noun=mode==='video'?'video':'photo';
+  const keys=galleryKeys(mode);
+  toast(`Deleting ${keys.length} ${noun}${keys.length>1?'s':''}…`);
+  for(const k of keys){ await deleteMedia(k); }
+  toast(`Deleted ${keys.length} ${noun}${keys.length>1?'s':''}`);
   renderPhotos();
 }
 function renderCamAngles(){
@@ -804,6 +844,7 @@ async function onVidFile(input){
   const f=input.files&&input.files[0]; input.value=''; if(!f) return;
   const key=Cam.jobId+'|video|'+Cam.phase;
   try{
+    untombstone(key);
     await photoPut(key,f); App.photoKeys.add(key);
     toast((Cam.phase==='before'?'Before':'After')+' video saved');
     queueUpload(key);
@@ -820,7 +861,7 @@ function retakePhoto(){ Cam.frozen=null; document.getElementById('camFrozen').st
 async function usePhoto(){
   if(!Cam.frozen) return;
   const ang=ANGLES[Cam.angleIdx]; const key=Cam.jobId+'|'+ang.id+'|'+Cam.phase;
-  try{ await photoPut(key,Cam.frozen); App.photoKeys.add(key); toast((Cam.phase==='before'?'Before':'After')+' · '+ang.name+' saved'); queueUpload(key); }
+  try{ untombstone(key); await photoPut(key,Cam.frozen); App.photoKeys.add(key); toast((Cam.phase==='before'?'Before':'After')+' · '+ang.name+' saved'); queueUpload(key); }
   catch(e){ toast('Could not save photo'); }
   const next=ANGLES.findIndex((a,i)=>i>Cam.angleIdx && !App.photoKeys.has(Cam.jobId+'|'+a.id+'|'+Cam.phase));
   if(next>=0) Cam.angleIdx=next;
@@ -854,6 +895,7 @@ function queueUpload(key){
 }
 async function doUpload(key){
   try{
+    if(App.deletedKeys.has(key)){ upQueueSet(upQueue().filter(k=>k!==key)); return; }  // never re-upload a deleted item
     const val=await photoGet(key); if(val==null){ upQueueSet(upQueue().filter(k=>k!==key)); return; }
     const isVid=key.split('|')[1]==='video';
     const blob = (val instanceof Blob) ? val : await (await fetch(val)).blob();
@@ -888,12 +930,25 @@ function processPendingUploads(){
   toast('Uploading '+q.length+' saved item'+(q.length>1?'s':'')+'…');
   q.reduce((p,key)=>p.then(()=>doUpload(key)), Promise.resolve());
 }
+/* Remove the server record for this key. ALWAYS attempts the Firestore delete
+   (this is the bug fix — the old code skipped it whenever the session wasn't
+   fully "live", which let the realtime listener re-add the photo). Returns true
+   if the server record is gone (or there's nothing/no connection needed), false
+   only when we're live but the server delete failed and should be retried. */
 async function cloudDelete(key){
-  if(!canUpload()) return;
-  const cm=App.cloudMedia.get(key); if(!cm) return;
-  try{ await firebase.storage().ref(cm.path).delete(); }catch(e){}
-  try{ await db.collection('media').doc(key.replace(/\|/g,'_')).delete(); }catch(e){}
+  const cm=App.cloudMedia.get(key);
   App.cloudMedia.delete(key);
+  if(App.source!=='live' || typeof firebase==='undefined' || !db) return true;  // nothing on the server for us to reach
+  let ok=true;
+  try{ await db.collection('media').doc(key.replace(/\|/g,'_')).delete(); }   // idempotent: succeeds even if already gone
+  catch(e){ ok=false; }
+  if(cm && cm.path && firebase.storage){ try{ await firebase.storage().ref(cm.path).delete(); }catch(e){} }  // best-effort
+  return ok;
+}
+function processPendingDeletes(){
+  if(App.source!=='live' || !db) return;
+  const q=delQueue(); if(!q.length) return;
+  q.reduce((p,key)=>p.then(async()=>{ const ok=await cloudDelete(key); if(ok) delQueueSet(delQueue().filter(k=>k!==key)); }), Promise.resolve());
 }
 function loadPhotoKeys(){ idb().then(d=>{ const t=d.transaction('photos','readonly'); const rq=t.objectStore('photos').getAllKeys(); rq.onsuccess=()=>{ App.photoKeys=new Set((rq.result||[]).map(String)); if(App.tab==='photos') renderPhotos(); }; }).catch(()=>{}); }
 
@@ -1254,10 +1309,13 @@ function subscribeLive(){
   App._unsub.push(db.collection('clients').onSnapshot(s=>{ App.clients=s.docs.map(d=>clientToClient({id:d.id,...d.data()})); renderAll(); }, e=>toast('Clients read error: '+e.code)));
   App._unsub.push(db.collection('expenses').onSnapshot(s=>{ App.expenses=s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, e=>{}));
   App._unsub.push(db.collection('media').onSnapshot(s=>{
-    App.cloudMedia=new Map(s.docs.map(d=>{ const m=d.data(); return [m.key,{path:m.path,url:m.url,type:m.type,size:m.size}]; }));
+    const m=new Map();
+    s.docs.forEach(d=>{ const x=d.data(); if(x&&x.key && !App.deletedKeys.has(x.key)) m.set(x.key,{path:x.path,url:x.url,type:x.type,size:x.size}); });
+    App.cloudMedia=m;
     if(App.tab==='photos') renderPhotos();
   }, e=>{}));
   processPendingUploads();
+  processPendingDeletes();
 }
 function unsubAll(){ App._unsub.forEach(u=>{try{u();}catch(e){}}); App._unsub=[]; }
 function disconnectLive(){ unsubAll(); try{ firebase.auth().signOut(); }catch(e){} App.cloudMedia=new Map(); App.source='seed'; localStorage.setItem('yd_source','seed'); loadSeed(); closeSheet(); toast('Switched to local mode'); }
@@ -1310,6 +1368,7 @@ function applyHash(){
 
 /* ---------- boot ---------- */
 function boot(){
+  loadDelKeys();
   loadSeed();
   setTab('jobs');
   registerSW();
