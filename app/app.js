@@ -4,10 +4,10 @@
    Schema maps to the real YDdetailers CRM (bookings / clients / expenses).
    ============================================================ */
 
-const FB_CONFIG = { apiKey:"AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E", authDomain:"yddetailers.firebaseapp.com", projectId:"yddetailers" };
+const FB_CONFIG = { apiKey:"AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E", authDomain:"yddetailers.firebaseapp.com", projectId:"yddetailers", storageBucket:"yddetailers.firebasestorage.app" };
 let db = null;
 
-const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, mediaMode:'photo', _unsub:[], photoKeys:new Set(), _dismissReconcile:false };
+const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, mediaMode:'photo', _unsub:[], photoKeys:new Set(), cloudMedia:new Map(), _dismissReconcile:false };
 
 const SERVICES = [
   {id:'exterior', name:'Premium Exterior Detail', cat:'ext',  prices:{Sedan:90,  SUV:100, Truck:120}},
@@ -61,6 +61,7 @@ const IC = {
   video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3" stroke-linejoin="round"/></svg>',
   play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>',
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9l.8-12" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke-linecap="round"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M12 3L8 7M12 3l4 4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" stroke-linecap="round"/></svg>',
   gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke-linecap="round"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>',
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>',
@@ -493,10 +494,24 @@ const ANGLES = [
   {id:'interior',name:'Interior', hint:'Front seats and dash in frame', interior:true},
 ];
 
-function jobPhotoStatus(jobId){ let b=0,a=0; App.photoKeys.forEach(k=>{ const p=k.split('|'); if(p[0]===jobId && p[1]!=='video'){ if(p[2]==='before')b++; else if(p[2]==='after')a++; } }); return {before:b,after:a}; }
-function jobVideoStatus(jobId){ return { before:App.photoKeys.has(jobId+'|video|before'), after:App.photoKeys.has(jobId+'|video|after') }; }
+/* local + cloud media, merged */
+function mediaKeys(){ const s=new Set(App.photoKeys); App.cloudMedia.forEach((v,k)=>s.add(k)); return s; }
+function hasMedia(key){ return App.photoKeys.has(key) || App.cloudMedia.has(key); }
+async function mediaURL(key){
+  const v=await photoGet(key);
+  if(v) return (v instanceof Blob) ? URL.createObjectURL(v) : v;
+  const cm=App.cloudMedia.get(key); return cm ? cm.url : null;
+}
+async function mediaBlob(key){
+  const v=await photoGet(key);
+  if(v) return (v instanceof Blob) ? v : await (await fetch(v)).blob();
+  const cm=App.cloudMedia.get(key); if(!cm) return null;
+  return await (await fetch(cm.url)).blob();
+}
+function jobPhotoStatus(jobId){ let b=0,a=0; mediaKeys().forEach(k=>{ const p=k.split('|'); if(p[0]===jobId && p[1]!=='video'){ if(p[2]==='before')b++; else if(p[2]==='after')a++; } }); return {before:b,after:a}; }
+function jobVideoStatus(jobId){ return { before:hasMedia(jobId+'|video|before'), after:hasMedia(jobId+'|video|after') }; }
 function findFeaturedPair(){
-  const m={}; App.photoKeys.forEach(k=>{ const [jid,ang,ph]=k.split('|'); if(ang==='video') return; const kk=jid+'|'+ang; (m[kk]=m[kk]||{})[ph]=true; });
+  const m={}; mediaKeys().forEach(k=>{ const [jid,ang,ph]=k.split('|'); if(ang==='video') return; const kk=jid+'|'+ang; (m[kk]=m[kk]||{})[ph]=true; });
   const cands=Object.keys(m).filter(kk=>m[kk].before&&m[kk].after);
   if(!cands.length) return null;
   let best=null;
@@ -548,16 +563,16 @@ function renderPhotos(){
   initSlider();
 }
 async function loadFeatured(pair){
-  const b=await photoGet(pair.jobId+'|'+pair.angle+'|before'); const a=await photoGet(pair.jobId+'|'+pair.angle+'|after');
+  const b=await mediaURL(pair.jobId+'|'+pair.angle+'|before'); const a=await mediaURL(pair.jobId+'|'+pair.angle+'|after');
   const be=document.getElementById('featBefore'), ae=document.getElementById('featAfter');
   if(be&&b) be.src=b; if(ae&&a) ae.src=a;
 }
 async function loadThumbs(jobs){
   for(const j of jobs){
     let key=null;
-    for(const ang of ANGLES){ if(App.photoKeys.has(j.id+'|'+ang.id+'|after')){ key=j.id+'|'+ang.id+'|after'; break; } }
-    if(!key) for(const ang of ANGLES){ if(App.photoKeys.has(j.id+'|'+ang.id+'|before')){ key=j.id+'|'+ang.id+'|before'; break; } }
-    if(key){ const data=await photoGet(key); const el=document.getElementById('thumb-'+j.id); if(el&&data) el.innerHTML='<img src="'+data+'">'; }
+    for(const ang of ANGLES){ if(hasMedia(j.id+'|'+ang.id+'|after')){ key=j.id+'|'+ang.id+'|after'; break; } }
+    if(!key) for(const ang of ANGLES){ if(hasMedia(j.id+'|'+ang.id+'|before')){ key=j.id+'|'+ang.id+'|before'; break; } }
+    if(key){ const data=await mediaURL(key); const el=document.getElementById('thumb-'+j.id); if(el&&data) el.innerHTML='<img src="'+data+'">'; }
   }
 }
 
@@ -567,8 +582,8 @@ function renderVideosView(el,h,T){
   if(feat){
     h += `<div class="badge" data-anim style="--i:2">${IC.video}Latest before / after</div>
       <div class="vid-pair" data-anim style="--i:3">
-        <div class="vid-cell"><video id="vidBefore" controls playsinline preload="metadata"></video><span class="ba-tag b">Before</span></div>
-        <div class="vid-cell"><video id="vidAfter" controls playsinline preload="metadata"></video><span class="ba-tag a">After</span></div>
+        <div class="vid-cell"><video id="vidBefore" controls playsinline preload="metadata"></video><span class="ba-tag b">Before</span><button class="vshare" onclick="shareMedia('${feat.id}|video|before')" aria-label="Share before video">${IC.share}</button></div>
+        <div class="vid-cell"><video id="vidAfter" controls playsinline preload="metadata"></video><span class="ba-tag a">After</span><button class="vshare" onclick="shareMedia('${feat.id}|video|after')" aria-label="Share after video">${IC.share}</button></div>
       </div>
       <div class="ba-caption vc" data-anim style="--i:4"><div><div class="cn">${esc(feat.name)}</div><div class="cs">${esc(feat.service)}</div></div><div class="cd">${feat.date===T?'Today':fmtDateShort(feat.date)}</div></div>`;
   } else if(withVids.length){
@@ -598,10 +613,10 @@ function renderVideosView(el,h,T){
   if(feat) loadFeaturedVids(feat.id);
 }
 async function loadFeaturedVids(jobId){
-  const b=await photoGet(jobId+'|video|before'), a=await photoGet(jobId+'|video|after');
+  const b=await mediaURL(jobId+'|video|before'), a=await mediaURL(jobId+'|video|after');
   const be=document.getElementById('vidBefore'), ae=document.getElementById('vidAfter');
-  if(be&&b) be.src=URL.createObjectURL(b);
-  if(ae&&a) ae.src=URL.createObjectURL(a);
+  if(be&&b) be.src=b;
+  if(ae&&a) ae.src=a;
 }
 
 /* ============================================================
@@ -611,7 +626,7 @@ const Cam = { jobId:null, angleIdx:0, phase:'before', mode:'photo', stream:null,
 function openCamera(jobId){
   const j=jobById(jobId); if(!j) return;
   Cam.jobId=jobId; Cam.phase='before'; Cam.frozen=null; Cam.mode=App.mediaMode;
-  const first=ANGLES.findIndex(a=>!App.photoKeys.has(jobId+'|'+a.id+'|before')); Cam.angleIdx=first>=0?first:0;
+  const first=ANGLES.findIndex(a=>!hasMedia(jobId+'|'+a.id+'|before')); Cam.angleIdx=first>=0?first:0;
   buildCameraUI(j);
   document.getElementById('cameraView').classList.add('open');
   refreshCam();
@@ -705,21 +720,36 @@ function refreshCam(){
 function setCamMode(m){ Cam.mode=m; App.mediaMode=m; refreshCam(); }
 function updateCamTrash(){
   const key = Cam.mode==='video' ? Cam.jobId+'|video|'+Cam.phase : Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|'+Cam.phase;
-  document.getElementById('camTrash').style.visibility = App.photoKeys.has(key)?'visible':'hidden';
+  document.getElementById('camTrash').style.visibility = hasMedia(key)?'visible':'hidden';
 }
 async function renderVidPanel(){
   const p=document.getElementById('camVidPanel'); const aft=Cam.phase==='after';
   updateCamTrash();
-  const blob=await photoGet(Cam.jobId+'|video|'+Cam.phase);
+  const key=Cam.jobId+'|video|'+Cam.phase;
+  const src=await mediaURL(key);
   if(Cam.mode!=='video') return;
-  if(blob){
-    p.innerHTML=`<video src="${URL.createObjectURL(blob)}" controls playsinline preload="metadata"></video>
-      <div class="cv-cap">${aft?'After':'Before'} walkaround saved. Shutter re-records, trash deletes.</div>`;
+  if(src){
+    const cloud=App.cloudMedia.has(key);
+    p.innerHTML=`<video src="${src}" controls playsinline preload="metadata"></video>
+      <div class="cv-actions"><button class="cv-share" onclick="shareMedia('${key}')">${IC.share}<span>Share / save to gallery</span></button></div>
+      <div class="cv-cap">${aft?'After':'Before'} walkaround ${cloud?'· in the cloud':'· on this phone'}. Shutter re-records, trash deletes.</div>`;
   } else {
     p.innerHTML=`<div class="cv-empty">${IC.video}
       <div class="cv-h">Film the ${aft?'after':'before'} walkaround</div>
       <div class="cv-s">Tap the shutter to open your camera. Walk slowly around the car${aft?', same direction as the before video':', one steady lap'}.</div></div>`;
   }
+}
+async function shareMedia(key){
+  try{
+    toast('Preparing…');
+    const blob=await mediaBlob(key);
+    if(!blob){ toast('Nothing to share yet'); return; }
+    const isVid=key.split('|')[1]==='video';
+    const ext=extOf(blob.type,isVid);
+    const file=new File([blob],'yd-'+key.replace(/\|/g,'-')+'.'+ext,{type:blob.type||(isVid?'video/mp4':'image/jpeg')});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file]}); }
+    else{ const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=file.name; document.body.appendChild(a); a.click(); a.remove(); }
+  }catch(e){ if(!e || e.name!=='AbortError') toast('Share failed: '+((e&&e.message)||'error')); }
 }
 function hideCamConfirm(){ const c=document.getElementById('camConfirm'); if(c) c.style.display='none'; }
 function camDelete(){
@@ -731,33 +761,34 @@ function camDelete(){
 async function camDeleteYes(){
   const vid=Cam.mode==='video';
   const key = vid ? Cam.jobId+'|video|'+Cam.phase : Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|'+Cam.phase;
-  try{ await photoDel(key); toast('Deleted'); }catch(e){ toast('Could not delete'); }
+  try{ await photoDel(key); await cloudDelete(key); toast('Deleted'); }catch(e){ toast('Could not delete'); }
+  upQueueSet(upQueue().filter(k=>k!==key));
   hideCamConfirm();
   if(vid) renderVidPanel(); else { renderCamAngles(); updateCamTrash(); loadGhost(); }
   renderPhotos();
 }
 function renderCamAngles(){
   document.getElementById('camAngles').innerHTML = ANGLES.map((a,i)=>{
-    const has=App.photoKeys.has(Cam.jobId+'|'+a.id+'|'+Cam.phase);
+    const has=hasMedia(Cam.jobId+'|'+a.id+'|'+Cam.phase);
     return `<button class="cam-angle ${i===Cam.angleIdx?'on':''}" onclick="setCamAngle(${i})">
       <span class="aico">${a.interior?IC.wheel:IC.carLine}</span><span class="anm">${a.name}</span>${has?`<span class="adone">${IC.check}</span>`:''}</button>`;
   }).join('');
 }
 function setCamAngle(i){ Cam.angleIdx=i; refreshCam(); }
-function setCamPhase(p){ Cam.phase=p; const first=ANGLES.findIndex(a=>!App.photoKeys.has(Cam.jobId+'|'+a.id+'|'+p)); Cam.angleIdx=first>=0?first:0; refreshCam(); }
+function setCamPhase(p){ Cam.phase=p; const first=ANGLES.findIndex(a=>!hasMedia(Cam.jobId+'|'+a.id+'|'+p)); Cam.angleIdx=first>=0?first:0; refreshCam(); }
 async function loadGhost(){
   const g=document.getElementById('camGhost'), guide=document.getElementById('camGuide');
   if(Cam.phase==='after'){
-    const data=await photoGet(Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|before');
+    const data=await mediaURL(Cam.jobId+'|'+ANGLES[Cam.angleIdx].id+'|before');
     if(data){ g.src=data; g.style.display='block'; guide.style.display='none'; return; }
   }
   g.style.display='none'; g.removeAttribute('src'); guide.style.display='grid';
 }
 function frameToDataURL(video){
-  const vw=video.videoWidth, vh=video.videoHeight; const scale=Math.min(1,1280/vw);
+  const vw=video.videoWidth, vh=video.videoHeight; const scale=Math.min(1,2560/vw);
   const cw=Math.round(vw*scale), ch=Math.round(vh*scale);
   const c=document.createElement('canvas'); c.width=cw; c.height=ch; c.getContext('2d').drawImage(video,0,0,cw,ch);
-  return c.toDataURL('image/jpeg',0.75);
+  return c.toDataURL('image/jpeg',0.88);
 }
 function showFrozen(data){
   Cam.frozen=data; const fr=document.getElementById('camFrozen'); fr.src=data; fr.style.display='block';
@@ -775,20 +806,21 @@ async function onVidFile(input){
   try{
     await photoPut(key,f); App.photoKeys.add(key);
     toast((Cam.phase==='before'?'Before':'After')+' video saved');
+    queueUpload(key);
   }catch(e){ toast('Could not save video (storage full?)'); }
   renderVidPanel(); renderPhotos();
 }
 function onCamFile(input){
   const f=input.files&&input.files[0]; if(!f) return; const url=URL.createObjectURL(f); const img=new Image();
-  img.onload=()=>{ const scale=Math.min(1,1280/img.width); const cw=Math.round(img.width*scale),ch=Math.round(img.height*scale);
-    const c=document.createElement('canvas'); c.width=cw;c.height=ch;c.getContext('2d').drawImage(img,0,0,cw,ch); URL.revokeObjectURL(url); showFrozen(c.toDataURL('image/jpeg',0.75)); };
+  img.onload=()=>{ const scale=Math.min(1,2560/img.width); const cw=Math.round(img.width*scale),ch=Math.round(img.height*scale);
+    const c=document.createElement('canvas'); c.width=cw;c.height=ch;c.getContext('2d').drawImage(img,0,0,cw,ch); URL.revokeObjectURL(url); showFrozen(c.toDataURL('image/jpeg',0.88)); };
   img.src=url;
 }
 function retakePhoto(){ Cam.frozen=null; document.getElementById('camFrozen').style.display='none'; document.getElementById('camControls').style.display='flex'; document.getElementById('camReview').className='cam-review'; }
 async function usePhoto(){
   if(!Cam.frozen) return;
   const ang=ANGLES[Cam.angleIdx]; const key=Cam.jobId+'|'+ang.id+'|'+Cam.phase;
-  try{ await photoPut(key,Cam.frozen); App.photoKeys.add(key); toast((Cam.phase==='before'?'Before':'After')+' · '+ang.name+' saved'); }
+  try{ await photoPut(key,Cam.frozen); App.photoKeys.add(key); toast((Cam.phase==='before'?'Before':'After')+' · '+ang.name+' saved'); queueUpload(key); }
   catch(e){ toast('Could not save photo'); }
   const next=ANGLES.findIndex((a,i)=>i>Cam.angleIdx && !App.photoKeys.has(Cam.jobId+'|'+a.id+'|'+Cam.phase));
   if(next>=0) Cam.angleIdx=next;
@@ -804,6 +836,65 @@ function idb(){ return new Promise((res,rej)=>{ if(_idb) return res(_idb); if(!(
 function photoPut(key,val){ return idb().then(d=>new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite'); t.objectStore('photos').put(val,key); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); })); }
 function photoGet(key){ return idb().then(d=>new Promise(res=>{ const t=d.transaction('photos','readonly'); const rq=t.objectStore('photos').get(key); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); })).catch(()=>null); }
 function photoDel(key){ return idb().then(d=>new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite'); t.objectStore('photos').delete(key); t.oncomplete=()=>{ App.photoKeys.delete(key); res(); }; t.onerror=()=>rej(t.error); })); }
+
+/* ---------- cloud media (Firebase Storage + 'media' collection) ---------- */
+function extOf(type,isVid){
+  type=type||'';
+  if(type.includes('quicktime'))return 'mov'; if(type.includes('mp4'))return 'mp4'; if(type.includes('webm'))return 'webm';
+  if(type.includes('png'))return 'png'; if(type.includes('heic'))return 'heic';
+  return isVid?'mp4':'jpg';
+}
+function canUpload(){ return App.source==='live' && typeof firebase!=='undefined' && firebase.auth && firebase.auth().currentUser && firebase.storage; }
+function upQueue(){ try{ return JSON.parse(localStorage.getItem('yd_upq')||'[]'); }catch(e){ return []; } }
+function upQueueSet(q){ localStorage.setItem('yd_upq', JSON.stringify(Array.from(new Set(q)))); }
+function queueUpload(key){
+  if(canUpload()){ doUpload(key); return; }
+  upQueueSet(upQueue().concat([key]));
+  toast('Saved on phone. Uploads when connected to live.');
+}
+async function doUpload(key){
+  try{
+    const val=await photoGet(key); if(val==null){ upQueueSet(upQueue().filter(k=>k!==key)); return; }
+    const isVid=key.split('|')[1]==='video';
+    const blob = (val instanceof Blob) ? val : await (await fetch(val)).blob();
+    const ext=extOf(blob.type,isVid);
+    const path='media/'+key.replace(/\|/g,'/')+'.'+ext;
+    const mb=(blob.size/1048576).toFixed(blob.size>10485760?0:1);
+    toast('Uploading '+(isVid?'video':'photo')+' ('+mb+' MB)…');
+    const task=firebase.storage().ref(path).put(blob,{contentType:blob.type||'application/octet-stream'});
+    task.on('state_changed', s=>{
+      const pct=Math.round(s.bytesTransferred/s.totalBytes*100);
+      if(isVid && pct<100 && pct%20===0) toast('Uploading video… '+pct+'%');
+    });
+    await task;
+    const url=await task.snapshot.ref.getDownloadURL();
+    const [jid,ang,ph]=key.split('|');
+    await db.collection('media').doc(key.replace(/\|/g,'_')).set({
+      key, jobId:jid, kind:isVid?'video':'photo', angle:isVid?null:ang, phase:ph,
+      path, url, type:blob.type||'', size:blob.size, ts:Date.now(),
+      by:(firebase.auth().currentUser&&firebase.auth().currentUser.email)||''
+    });
+    upQueueSet(upQueue().filter(k=>k!==key));
+    toast((isVid?'Video':'Photo')+' uploaded to cloud');
+  }catch(e){
+    upQueueSet(upQueue().concat([key]));
+    const code=(e&&e.code)||'';
+    toast(code==='storage/unauthorized' ? 'Cloud upload blocked. Check Storage rules.' : 'Upload failed. Will retry when connected.');
+  }
+}
+function processPendingUploads(){
+  if(!canUpload()) return;
+  const q=upQueue(); if(!q.length) return;
+  toast('Uploading '+q.length+' saved item'+(q.length>1?'s':'')+'…');
+  q.reduce((p,key)=>p.then(()=>doUpload(key)), Promise.resolve());
+}
+async function cloudDelete(key){
+  if(!canUpload()) return;
+  const cm=App.cloudMedia.get(key); if(!cm) return;
+  try{ await firebase.storage().ref(cm.path).delete(); }catch(e){}
+  try{ await db.collection('media').doc(key.replace(/\|/g,'_')).delete(); }catch(e){}
+  App.cloudMedia.delete(key);
+}
 function loadPhotoKeys(){ idb().then(d=>{ const t=d.transaction('photos','readonly'); const rq=t.objectStore('photos').getAllKeys(); rq.onsuccess=()=>{ App.photoKeys=new Set((rq.result||[]).map(String)); if(App.tab==='photos') renderPhotos(); }; }).catch(()=>{}); }
 
 /* ============================================================
@@ -1162,9 +1253,14 @@ function subscribeLive(){
   App._unsub.push(db.collection('bookings').onSnapshot(s=>{ App.jobs=s.docs.map(d=>bookingToJob({id:d.id,...d.data()})); renderAll(); }, e=>toast('Bookings read error: '+e.code)));
   App._unsub.push(db.collection('clients').onSnapshot(s=>{ App.clients=s.docs.map(d=>clientToClient({id:d.id,...d.data()})); renderAll(); }, e=>toast('Clients read error: '+e.code)));
   App._unsub.push(db.collection('expenses').onSnapshot(s=>{ App.expenses=s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, e=>{}));
+  App._unsub.push(db.collection('media').onSnapshot(s=>{
+    App.cloudMedia=new Map(s.docs.map(d=>{ const m=d.data(); return [m.key,{path:m.path,url:m.url,type:m.type,size:m.size}]; }));
+    if(App.tab==='photos') renderPhotos();
+  }, e=>{}));
+  processPendingUploads();
 }
 function unsubAll(){ App._unsub.forEach(u=>{try{u();}catch(e){}}); App._unsub=[]; }
-function disconnectLive(){ unsubAll(); try{ firebase.auth().signOut(); }catch(e){} App.source='seed'; localStorage.setItem('yd_source','seed'); loadSeed(); closeSheet(); toast('Switched to local mode'); }
+function disconnectLive(){ unsubAll(); try{ firebase.auth().signOut(); }catch(e){} App.cloudMedia=new Map(); App.source='seed'; localStorage.setItem('yd_source','seed'); loadSeed(); closeSheet(); toast('Switched to local mode'); }
 function tryResumeLive(){
   try{ db=fbInit(); }catch(e){ App.source='seed'; return; }
   firebase.auth().onAuthStateChanged(u=>{ if(u){ App.user=u; App.source='live'; subscribeLive(); } else { App.source='seed'; renderAll(); } });

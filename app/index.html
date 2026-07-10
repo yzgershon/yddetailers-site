@@ -503,6 +503,11 @@ input,select,textarea{font-family:inherit;}
 .vid-cell .ba-tag.b{left:10px;}
 .vid-cell .ba-tag.a{right:10px;}
 .ba-caption.vc{border-radius:var(--r-lg);border-top:1px solid var(--line-2);margin-top:10px;}
+.vshare{position:absolute;bottom:10px;right:10px;width:38px;height:38px;border-radius:12px;background:rgba(20,16,12,.6);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:4;}
+.vshare svg{width:18px;height:18px;color:#fff;}
+.cv-actions{display:flex;justify-content:center;flex:0 0 auto;}
+.cv-share{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#1a1a1a;font-family:var(--font-d);font-weight:600;font-size:14px;padding:12px 18px;border-radius:13px;}
+.cv-share svg{width:18px;height:18px;}
 
 /* job form: vehicle type + service tiles + add-ons */
 .vtype{display:flex;gap:8px;}
@@ -568,6 +573,7 @@ input,select,textarea{font-family:inherit;}
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
