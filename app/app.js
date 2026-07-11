@@ -5,6 +5,9 @@
    ============================================================ */
 
 const FB_CONFIG = { apiKey:"AIzaSyBSy3p1NAPspnYr8qLePbKUrZWNIiOqU8E", authDomain:"yddetailers.firebaseapp.com", projectId:"yddetailers", storageBucket:"yddetailers.firebasestorage.app" };
+/* Cloud photo/video sync needs Firebase Storage, which requires the paid Blaze plan.
+   Staying local for now — flip this to true after enabling Storage in the console. */
+const CLOUD_MEDIA = false;
 let db = null;
 
 const App = { source:'seed', jobs:[], clients:[], expenses:[], user:null, tab:'jobs', jobView:'today', moneyPeriod:'week', moneyOffset:0, mediaMode:'photo', _unsub:[], photoKeys:new Set(), cloudMedia:new Map(), deletedKeys:new Set(), _dismissReconcile:false };
@@ -885,10 +888,11 @@ function extOf(type,isVid){
   if(type.includes('png'))return 'png'; if(type.includes('heic'))return 'heic';
   return isVid?'mp4':'jpg';
 }
-function canUpload(){ return App.source==='live' && typeof firebase!=='undefined' && firebase.auth && firebase.auth().currentUser && firebase.storage; }
+function canUpload(){ return CLOUD_MEDIA && App.source==='live' && typeof firebase!=='undefined' && firebase.auth && firebase.auth().currentUser && firebase.storage; }
 function upQueue(){ try{ return JSON.parse(localStorage.getItem('yd_upq')||'[]'); }catch(e){ return []; } }
 function upQueueSet(q){ localStorage.setItem('yd_upq', JSON.stringify(Array.from(new Set(q)))); }
 function queueUpload(key){
+  if(!CLOUD_MEDIA) return;                 // local-only mode: photo already saved on the phone, nothing to upload
   if(canUpload()){ doUpload(key); return; }
   upQueueSet(upQueue().concat([key]));
   toast('Saved on phone. Uploads when connected to live.');
@@ -938,7 +942,7 @@ function processPendingUploads(){
 async function cloudDelete(key){
   const cm=App.cloudMedia.get(key);
   App.cloudMedia.delete(key);
-  if(App.source!=='live' || typeof firebase==='undefined' || !db) return true;  // nothing on the server for us to reach
+  if(!CLOUD_MEDIA || App.source!=='live' || typeof firebase==='undefined' || !db) return true;  // nothing on the server for us to reach
   let ok=true;
   try{ await db.collection('media').doc(key.replace(/\|/g,'_')).delete(); }   // idempotent: succeeds even if already gone
   catch(e){ ok=false; }
@@ -1308,14 +1312,16 @@ function subscribeLive(){
   App._unsub.push(db.collection('bookings').onSnapshot(s=>{ App.jobs=s.docs.map(d=>bookingToJob({id:d.id,...d.data()})); renderAll(); }, e=>toast('Bookings read error: '+e.code)));
   App._unsub.push(db.collection('clients').onSnapshot(s=>{ App.clients=s.docs.map(d=>clientToClient({id:d.id,...d.data()})); renderAll(); }, e=>toast('Clients read error: '+e.code)));
   App._unsub.push(db.collection('expenses').onSnapshot(s=>{ App.expenses=s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, e=>{}));
-  App._unsub.push(db.collection('media').onSnapshot(s=>{
-    const m=new Map();
-    s.docs.forEach(d=>{ const x=d.data(); if(x&&x.key && !App.deletedKeys.has(x.key)) m.set(x.key,{path:x.path,url:x.url,type:x.type,size:x.size}); });
-    App.cloudMedia=m;
-    if(App.tab==='photos') renderPhotos();
-  }, e=>{}));
-  processPendingUploads();
-  processPendingDeletes();
+  if(CLOUD_MEDIA){
+    App._unsub.push(db.collection('media').onSnapshot(s=>{
+      const m=new Map();
+      s.docs.forEach(d=>{ const x=d.data(); if(x&&x.key && !App.deletedKeys.has(x.key)) m.set(x.key,{path:x.path,url:x.url,type:x.type,size:x.size}); });
+      App.cloudMedia=m;
+      if(App.tab==='photos') renderPhotos();
+    }, e=>{}));
+    processPendingUploads();
+    processPendingDeletes();
+  }
 }
 function unsubAll(){ App._unsub.forEach(u=>{try{u();}catch(e){}}); App._unsub=[]; }
 function disconnectLive(){ unsubAll(); try{ firebase.auth().signOut(); }catch(e){} App.cloudMedia=new Map(); App.source='seed'; localStorage.setItem('yd_source','seed'); loadSeed(); closeSheet(); toast('Switched to local mode'); }
@@ -1369,6 +1375,7 @@ function applyHash(){
 /* ---------- boot ---------- */
 function boot(){
   loadDelKeys();
+  if(!CLOUD_MEDIA){ try{ localStorage.removeItem('yd_upq'); }catch(e){} }  // drop any stale upload queue from before local-only
   loadSeed();
   setTab('jobs');
   registerSW();
