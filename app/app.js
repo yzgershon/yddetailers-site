@@ -303,12 +303,17 @@ function renderJobs(){
     h += `<div class="section-label" data-anim style="--i:9"><h3>Earlier today</h3></div>`;
     done.forEach((j,i)=> h+=jobCard(j,10+i,true));
   }
+  const prevDetails = recentDetails(30, true);
+  if(prevDetails.length){
+    h += `<div class="section-label" data-anim style="--i:13"><h3>Recent details</h3><span class="more">last 30 days</span></div>`;
+    prevDetails.forEach((j,i)=> h+=jobCard(j,14+Math.min(i,30),true));
+  }
   el.innerHTML=h;
 }
 
 function recentDayView(){
   const T=todayISO(); const ws=weekStart(T);
-  const recent = App.jobs.filter(j=>j.status==='completed' && j.date<=T).sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||''))).slice(0,6);
+  const recent = recentDetails(30, false);
   const weekDone = App.jobs.filter(j=>j.status==='completed' && inRange(j.date,ws,addDays(ws,6)));
   const weekEarn = sum(weekDone.map(j=>j.price));
   const collectN = App.jobs.filter(j=>statusOf(j)==='collect').length;
@@ -327,16 +332,16 @@ function recentDayView(){
       upWeek.slice(1).forEach((j,i)=> h+=jobCard(j,5+i));
     }
     if(recent.length){
-      h += `<div class="section-label" data-anim style="--i:7"><h3>Recent work</h3></div>`;
-      recent.slice(0,3).forEach((j,i)=> h+=jobCard(j,8+i,true));
+      h += `<div class="section-label" data-anim style="--i:7"><h3>Recent details</h3><span class="more">last 30 days</span></div>`;
+      recent.forEach((j,i)=> h+=jobCard(j,8+Math.min(i,30),true));
     }
     return h;
   }
   h += `<div class="today-note" data-anim style="--i:2"><span class="ic">${IC.cal}</span><div><div class="tn-h">No details scheduled today</div><div class="tn-s">Nothing else this week. Here's your recent work.</div></div></div>`;
   if(recent[0]) h += heroCard(recent[0],'recent');
   if(recent.length>1){
-    h += `<div class="section-label" data-anim style="--i:4"><h3>Recent work</h3><span class="more">last ${recent.length-1}</span></div>`;
-    recent.slice(1).forEach((j,i)=> h+=jobCard(j,5+i,true));
+    h += `<div class="section-label" data-anim style="--i:4"><h3>Recent details</h3><span class="more">last 30 days</span></div>`;
+    recent.slice(1).forEach((j,i)=> h+=jobCard(j,5+Math.min(i,30),true));
   }
   if(recent.length===0){
     h += emptyState(IC.cal,'No jobs yet','Add your first job with the + button, or connect your live CRM in Settings.','Add a job','onFab()');
@@ -355,10 +360,29 @@ function weekView(){
   for(let i=0;i<7;i++){ const d=addDays(ws,i); const jobs=App.jobs.filter(j=>j.date===d && statusOf(j)!=='cancelled'); const doneN=jobs.filter(j=>j.status==='completed').length;
     const earn=sum(jobs.filter(j=>j.status==='completed').map(j=>j.price)); const isT=d===T; const rest=jobs.length===0;
     const ds = rest?'No jobs':(jobs.length+' job'+(jobs.length>1?'s':'')+' · '+doneN+' done');
-    rows += `<div class="dayrow ${isT?'today':''} ${rest?'rest':''}"><div class="dcal"><span class="m">${monShort(d)}</span><span class="n">${dayNum(d)}</span></div>
+    rows += `<div class="dayrow ${isT?'today':''} ${rest?'rest':''}" ${rest?'':`role="button" tabindex="0" onclick="openDay('${d}')"`}><div class="dcal"><span class="m">${monShort(d)}</span><span class="n">${dayNum(d)}</span></div>
       <div class="dinfo"><div class="dt">${['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i]}${isT?' · Today':''}</div><div class="ds">${ds}</div></div>
-      <div class="damt">${money(earn)}</div></div>`; }
+      <div class="damt">${money(earn)}</div>${rest?'':`<span class="dchev">${IC.chev}</span>`}</div>`; }
   return `<div data-anim style="--i:2">${strip}<div class="badge">${IC.arrow}Week of ${fmtDateShort(ws)} · ${money(weekEarn)} earned</div>${rows}</div>`;
+}
+
+/* Tapping a day in the week view -> open that day's detail(s). One job opens the
+   full detail directly; multiple opens a sheet listing them, each tappable. */
+function openDay(d){
+  const jobs=App.jobs.filter(j=>j.date===d && statusOf(j)!=='cancelled').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  if(!jobs.length) return;
+  if(jobs.length===1){ openJob(jobs[0].id); return; }
+  const list=jobs.map((j,i)=>jobCard(j,i)).join('');
+  openSheet(`<div class="sheet-grip"></div>
+    <div class="sheet-head"><h3>${dowName(d)} · ${fmtDateShort(d)}</h3><button class="x" onclick="closeSheet()">${IC.x}</button></div>
+    <div class="sheet-body">${list}</div>`);
+}
+
+/* Completed details within the last N days, newest first. beforeToday drops today's. */
+function recentDetails(days, beforeToday){
+  const T=todayISO(); const from=addDays(T,-days);
+  return App.jobs.filter(j=>j.status==='completed' && j.date>=from && (beforeToday? j.date<T : j.date<=T))
+    .sort((a,b)=>(b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
 }
 
 function emptyState(icon,title,msg,btn,action){
@@ -984,6 +1008,7 @@ function clientById(id){ return App.clients.find(c=>c.id===id); }
 
 function openJob(id){
   const j=jobById(id); if(!j) return; const s=statusOf(j);
+  closeSheet();  // in case we came from the week-day sheet (detail sits below the sheet otherwise)
   const body=document.getElementById('jobDetailBody');
   body.innerHTML = `
     <div class="dhead"><button class="iconbtn" onclick="closeJob()" aria-label="Back">${IC.back}</button><span class="dtitle">Job Detail</span><button class="iconbtn" onclick="openJobForm('${j.id}')" aria-label="Edit">${IC.edit}</button></div>

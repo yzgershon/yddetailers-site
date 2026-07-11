@@ -144,6 +144,10 @@ input,select,textarea{font-family:inherit;}
 .dayrow .dinfo .ds{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px;}
 .dayrow .damt{font-family:var(--font-d);font-weight:600;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums;}
 .dayrow.rest .damt{color:var(--muted-2);}
+.dayrow[role="button"]{cursor:pointer;transition:transform .1s;}
+.dayrow[role="button"]:active{transform:scale(.99);}
+.dayrow .dchev{display:flex;align-items:center;color:var(--muted-2);flex:0 0 auto;margin-left:-4px;}
+.dayrow .dchev svg{width:18px;height:18px;}
 
 .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:8px;}
 .kpi{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-md);padding:15px 15px 14px;box-shadow:var(--sh-md);position:relative;overflow:hidden;}
