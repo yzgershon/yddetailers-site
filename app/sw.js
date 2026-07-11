@@ -1,5 +1,5 @@
 /* YD Detailers — service worker (network-first so deploys show immediately) */
-const CACHE = 'yd-v3';
+const CACHE = 'yd-v4';
 const ASSETS = ['./', './index.html', './app.js', './manifest.webmanifest', './icon.svg', './logo.png'];
 
 self.addEventListener('install', e => {
