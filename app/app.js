@@ -391,11 +391,13 @@ function emptyState(icon,title,msg,btn,action){
 
 function periodWindow(period, offset){
   const T=todayISO();
+  if(period==='all'){ return {from:'2000-01-01', to:T}; }
   if(period==='week'){ const start=addDays(weekStart(T), offset*7); return {from:start, to:addDays(start,6)}; }
   const d=new Date(T+'T00:00:00'); const y=d.getFullYear(), m=d.getMonth();
   return { from:isoOf(new Date(y, m+offset, 1)), to:isoOf(new Date(y, m+offset+1, 0)) };
 }
 function periodLabel(period, offset){
+  if(period==='all') return 'All time';
   if(offset===0) return period==='week'?'This week':'This month';
   if(offset===-1) return period==='week'?'Last week':'Last month';
   const w=periodWindow(period,offset);
@@ -415,6 +417,21 @@ function moneyStats(period, offset){
 }
 function chartData(period, offset){
   const T=todayISO(); const completed=App.jobs.filter(j=>j.status==='completed'); const w=periodWindow(period,offset);
+  if(period==='all'){
+    const dates=completed.map(j=>j.date).filter(Boolean).sort();
+    if(!dates.length) return {labels:['—'],vals:[0],todayIdx:-1};
+    const first=new Date(dates[0]+'T00:00:00'), now=new Date(T+'T00:00:00');
+    const labels=[],vals=[]; let todayIdx=-1, y=first.getFullYear(), m=first.getMonth();
+    while(y<now.getFullYear() || (y===now.getFullYear() && m<=now.getMonth())){
+      const from=isoOf(new Date(y,m,1)), to=isoOf(new Date(y,m+1,0)); let v=0;
+      completed.forEach(j=>{ if(inRange(j.date,from,to)) v+=j.price; });
+      labels.push(MON[m]); vals.push(v);
+      if(y===now.getFullYear() && m===now.getMonth()) todayIdx=labels.length-1;
+      m++; if(m>11){ m=0; y++; }
+    }
+    if(labels.length>12){ const s=labels.length-12; return {labels:labels.slice(s),vals:vals.slice(s),todayIdx:todayIdx>=0?todayIdx-s:-1}; }
+    return {labels,vals,todayIdx};
+  }
   if(period==='week'){ const labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; const vals=[0,0,0,0,0,0,0];
     completed.forEach(j=>{ if(inRange(j.date,w.from,w.to)) vals[dowMon(j.date)]+=j.price; });
     const todayIdx = inRange(T,w.from,w.to)? dowMon(T) : -1;
@@ -427,21 +444,36 @@ function chartData(period, offset){
 function renderMoney(){
   const el=document.getElementById('s-money'); const p=App.moneyPeriod; const off=App.moneyOffset; const st=moneyStats(p,off);
   let h = topbar('Earnings','Money');
-  h += `<div class="seg" data-anim style="--i:1" id="moneyseg"><span class="glider" style="transform:translateX(${p==='month'?'100%':'0'})"></span>
+  const isAll = p==='all';
+  h += `<div class="seg seg3" data-anim style="--i:1" id="moneyseg"><span class="glider" style="width:calc(33.333% - 3px);transform:translateX(${isAll?'200%':(p==='month'?'100%':'0')})"></span>
     <button class="${p==='week'?'on':''}" onclick="setMoneyPeriod('week')">Weekly</button>
-    <button class="${p==='month'?'on':''}" onclick="setMoneyPeriod('month')">Monthly</button></div>`;
-  h += `<div class="period-nav" data-anim style="--i:1">
-    <button onclick="stepPeriod(-1)" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    <span class="pl">${periodLabel(p,off)}</span>
-    <button onclick="stepPeriod(1)" ${off>=0?'disabled':''} aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-  </div>`;
+    <button class="${p==='month'?'on':''}" onclick="setMoneyPeriod('month')">Monthly</button>
+    <button class="${isAll?'on':''}" onclick="setMoneyPeriod('all')">All time</button></div>`;
+  if(isAll){
+    h += `<div class="badge" data-anim style="--i:1">${IC.chart}All-time totals · since day one</div>`;
+  } else {
+    h += `<div class="period-nav" data-anim style="--i:1">
+      <button onclick="stepPeriod(-1)" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span class="pl">${periodLabel(p,off)}</span>
+      <button onclick="stepPeriod(1)" ${off>=0?'disabled':''} aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>`;
+  }
+  const expTotal = sum((App.expenses||[]).map(e=>+e.amount||0));
+  const net = st.rev - expTotal;
+  const revSub = isAll
+    ? `<div class="ksub" style="text-align:right;color:var(--muted);font-weight:700">${st.jobs} job${st.jobs!==1?'s':''}<br>all time</div>`
+    : `<div class="ksub up" style="text-align:right"><svg class="up-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 15l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg> ${st.delta>=0?'+':''}${st.delta}%<br><span style="color:var(--muted);font-weight:700">vs prev ${p==='week'?'week':'month'}</span></div>`;
   h += `<div class="kpi-grid" data-anim style="--i:2">
-    <div class="kpi span2"><div><div class="ktop"><span class="kic tint-o">${IC.dollar}</span><span class="kl">Revenue</span></div><div class="kv big kv-o">${money(st.rev)}</div></div>
-      <div class="ksub up" style="text-align:right"><svg class="up-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 15l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg> ${st.delta>=0?'+':''}${st.delta}%<br><span style="color:var(--muted);font-weight:700">vs prev ${p==='week'?'week':'month'}</span></div></div>
-    <div class="kpi"><div class="ktop"><span class="kic tint-b">${IC.check}</span><span class="kl">Jobs done</span></div><div class="kv">${st.jobs}</div></div>
-    <div class="kpi"><div class="ktop"><span class="kic tint-g">${IC.heart}</span><span class="kl">Tips</span></div><div class="kv kv-g">${money(st.tips)}</div></div>
+    <div class="kpi span2"><div><div class="ktop"><span class="kic tint-o">${IC.dollar}</span><span class="kl">${isAll?'Total revenue':'Revenue'}</span></div><div class="kv big kv-o">${money(st.rev)}</div></div>${revSub}</div>
+    <div class="kpi"><div class="ktop"><span class="kic tint-b">${IC.check}</span><span class="kl">${isAll?'Total jobs':'Jobs done'}</span></div><div class="kv">${st.jobs}</div></div>
+    <div class="kpi"><div class="ktop"><span class="kic tint-g">${IC.heart}</span><span class="kl">${isAll?'Total tips':'Tips'}</span></div><div class="kv kv-g">${money(st.tips)}</div></div>
     <div class="kpi"><div class="ktop"><span class="kic tint-p">${IC.chart}</span><span class="kl">Avg ticket</span></div><div class="kv kv-p">${money(st.avg)}</div></div>
-    <div class="kpi unpaid"><div class="ktop"><span class="kic tint-c">${IC.alert}</span><span class="kl">Unpaid</span></div><div class="kv kv-c">${money(st.unpaid)}</div><div class="ksub" style="color:var(--coral)">${st.unpaidN} job${st.unpaidN!==1?'s':''} to collect</div></div>
+    ${isAll?`
+    <div class="kpi"><div class="ktop"><span class="kic tint-c">${IC.alert}</span><span class="kl">Expenses</span></div><div class="kv kv-c">${money(expTotal)}</div></div>
+    <div class="kpi span2"><div><div class="ktop"><span class="kic tint-g">${IC.dollar}</span><span class="kl">Net profit</span></div><div class="kv big ${net>=0?'kv-g':'kv-c'}">${money(net)}</div></div>
+      <div class="ksub" style="text-align:right;color:var(--muted);font-weight:700">${App.clients.length} client${App.clients.length!==1?'s':''}<br>${st.unpaidN} unpaid</div></div>`
+    :`
+    <div class="kpi unpaid"><div class="ktop"><span class="kic tint-c">${IC.alert}</span><span class="kl">Unpaid</span></div><div class="kv kv-c">${money(st.unpaid)}</div><div class="ksub" style="color:var(--coral)">${st.unpaidN} job${st.unpaidN!==1?'s':''} to collect</div></div>`}
   </div>`;
   const cd=chartData(p,off); const max=Math.max(1,...cd.vals);
   let bars='';
@@ -1385,6 +1417,7 @@ function applyHash(){
   if(['jobs','money','clients','photos'].includes(k)) setTab(k);
   else if(k==='week'){ setTab('jobs'); setJobView('week'); }
   else if(k==='month'){ setTab('money'); setMoneyPeriod('month'); }
+  else if(k==='alltime'){ setTab('money'); setMoneyPeriod('all'); }
   else if(k==='job'&&v){ setTab('jobs'); openJob(v); }
   else if(k==='cust'&&v){ setTab('clients'); openCust(v); }
   else if(k==='settings'){ openSettings(); }
